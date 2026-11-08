@@ -15,19 +15,28 @@ struct GameScreen: View {
             Spacer(minLength: 8)
         }
         .padding(.top, 6)
-        .onChange(of: engine.phase) { _, phase in
-            guard phase == .won else { return }
-            app.recordResult(level: engine.level,
-                             score: engine.score,
-                             stars: engine.level.stars(for: engine.score))
-        }
         .overlay {
-            if engine.phase != .playing {
+            if engine.phase == .goalReached || engine.showsFinalResult {
                 ResultOverlay(engine: engine)
                     .transition(.opacity)
             }
         }
+        .overlay(alignment: .top) {
+            VStack(spacing: 8) {
+                if let feedback = engine.clearFeedback {
+                    ClearFeedbackView(feedback: feedback)
+                        .transition(.scale.combined(with: .opacity))
+                }
+                if let warning = app.saveWarning {
+                    SaveWarningView(message: warning) {
+                        app.saveWarning = nil
+                    }
+                }
+            }
+            .padding(.top, 92)
+        }
         .animation(.easeInOut(duration: 0.25), value: engine.phase)
+        .animation(.easeInOut(duration: 0.18), value: engine.clearFeedback?.id)
     }
 }
 
@@ -77,7 +86,36 @@ struct HUDView: View {
             .padding(.horizontal, 16)
 
             objectives
+            starProgress
         }
+    }
+
+    private var starProgress: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "star.fill")
+                .foregroundStyle(Theme.accentSecondary)
+            if let threshold = engine.nextStarThreshold,
+               let remaining = engine.pointsToNextStar {
+                Text("Next star: \(threshold) · \(remaining) points")
+                    .font(.caption.weight(.semibold))
+                    .monospacedDigit()
+            } else {
+                Text(engine.hasGuaranteedClear ? "All stars earned" : "Top score tier reached")
+                    .font(.caption.weight(.semibold))
+            }
+            Spacer(minLength: 4)
+            if engine.phase == .starChase {
+                Button("Finish") {
+                    engine.requestFinish()
+                }
+                .font(.caption.weight(.bold))
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.accent)
+                .disabled(!engine.canFinishChase)
+                .accessibilityIdentifier("finishChaseButton")
+            }
+        }
+        .padding(.horizontal, 16)
     }
 
     private var objectives: some View {
@@ -87,6 +125,40 @@ struct HUDView: View {
             }
             Spacer(minLength: 0)
         }
+        .padding(.horizontal, 16)
+    }
+}
+
+private struct ClearFeedbackView: View {
+    let feedback: GameEngine.ClearFeedback
+
+    var body: some View {
+        Text("+\(feedback.points)  ×\(feedback.multiplier)\(feedback.spawnedSpecial ? "  ✨" : "")")
+            .font(.system(size: 16, weight: .heavy, design: .rounded))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(Capsule().fill(Theme.card))
+            .accessibilityLabel("\(feedback.points) points, multiplier \(feedback.multiplier)")
+    }
+}
+
+private struct SaveWarningView: View {
+    let message: String
+    let dismiss: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+            Text(message)
+                .font(.caption)
+                .lineLimit(3)
+            Button(action: dismiss) {
+                Image(systemName: "xmark")
+            }
+            .accessibilityLabel("Dismiss save warning")
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.card))
         .padding(.horizontal, 16)
     }
 }

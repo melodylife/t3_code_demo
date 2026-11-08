@@ -9,7 +9,7 @@ struct MenuView: View {
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 5)
 
     private var nextLevel: Level? {
-        app.levels.first { app.isUnlocked($0) && app.stars(for: $0) == 0 } ?? app.levels.last
+        app.nextCampaignLevel ?? app.levels.last
     }
 
     var body: some View {
@@ -51,7 +51,7 @@ struct MenuView: View {
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: "play.fill")
-                Text(app.stars(for: level) == 0 ? "Play Level \(level.id)" : "Replay Level \(level.id)")
+                Text(app.isCompleted(level) ? "Replay Level \(level.id)" : "Play Level \(level.id)")
                     .font(.system(size: 19, weight: .bold, design: .rounded))
             }
             .frame(maxWidth: .infinity)
@@ -130,6 +130,14 @@ private struct LevelTile: View {
                         Image(systemName: index < stars ? "star.fill" : "star")
                             .font(.system(size: 7))
                             .foregroundStyle(index < stars ? Theme.accentSecondary : Color.secondary.opacity(0.5))
+                    }
+                }
+                .overlay(alignment: .trailing) {
+                    if app.isCompleted(level) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundStyle(Theme.accentSecondary)
+                            .offset(x: 10)
                     }
                 }
             }

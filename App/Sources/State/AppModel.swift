@@ -2,59 +2,29 @@ import Combine
 import Foundation
 import Match3Core
 
-struct ProgressData: Codable, Equatable {
-    var unlockedLevel = 1
-    var stars: [Int: Int] = [:]
-    var bestScores: [Int: Int] = [:]
-
-    static let empty = ProgressData()
-}
-
-/// JSON in Application Support. Synchronous and tiny, so no actor needed.
-final class ProgressStore {
-    private(set) var data: ProgressData
-    private let url: URL
-
-    init(fileManager: FileManager = .default) {
-        let support = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        let directory = support.appendingPathComponent("EmojiMatch", isDirectory: true)
-        try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
-        url = directory.appendingPathComponent("progress.json")
-
-        if let raw = try? Data(contentsOf: url),
-           let decoded = try? JSONDecoder().decode(ProgressData.self, from: raw) {
-            data = decoded
-        } else {
-            data = .empty
-        }
-    }
-
-    func record(levelID: Int, score: Int, stars: Int, unlockedLevel: Int) {
-        var next = data
-        next.stars[levelID] = max(next.stars[levelID] ?? 0, stars)
-        next.bestScores[levelID] = max(next.bestScores[levelID] ?? 0, score)
-        next.unlockedLevel = max(next.unlockedLevel, unlockedLevel)
-        data = next
-        guard let raw = try? JSONEncoder().encode(data) else { return }
-        try? raw.write(to: url, options: .atomic)
-    }
-}
-
 final class AppModel: ObservableObject {
-    @Published private(set) var progress: ProgressData
+    @Published private(set) var progress: CampaignProgress
     @Published private(set) var engine: GameEngine?
+    @Published var saveWarning: String?
 
     let levels: [Level]
-    private let store: ProgressStore
+    private let store: CampaignProgressStore
 
-    init(store: ProgressStore = ProgressStore()) {
+    init(store: CampaignProgressStore = CampaignProgressStore()) {
         self.store = store
         levels = LevelCatalog.load()
         progress = store.data
+        if let error = store.lastError {
+            saveWarning = "Progress could not be loaded: \(error.message)"
+        }
     }
 
     func isUnlocked(_ level: Level) -> Bool {
         level.id <= progress.unlockedLevel
+    }
+
+    func isCompleted(_ level: Level) -> Bool {
+        progress.isCompleted(levelID: level.id)
     }
 
     func stars(for level: Level) -> Int {
@@ -69,20 +39,49 @@ final class AppModel: ObservableObject {
         levels.first { $0.id == id }
     }
 
+    var nextCampaignLevel: Level? {
+        guard let id = progress.nextUncompletedLevelID(from: levels.map(\.id)) else { return nil }
+        return level(withID: id)
+    }
+
     func start(_ level: Level) {
-        engine = GameEngine(level: level)
+        engine?.resetTransientState()
+        let nextEngine = GameEngine(level: level)
+        nextEngine.onSettledCampaignOutcome = { [weak self] outcome in
+            self?.record(outcome)
+        }
+        engine = nextEngine
     }
 
     func exitGame() {
+        engine?.resetTransientState()
         engine = nil
     }
 
+    /// Compatibility entry point for callers that already have a final result.
     func recordResult(level: Level, score: Int, stars: Int) {
-        store.record(levelID: level.id,
+        record(.init(level: level,
                      score: score,
-                     stars: stars,
-                     unlockedLevel: min(levels.count, level.id + 1))
+                     stars: max(1, stars),
+                     completed: true))
+    }
+
+    private func record(_ outcome: GameEngine.SettledCampaignOutcome) {
+        let unlocked = outcome.completed
+            ? min(levels.count, outcome.level.id + 1)
+            : progress.unlockedLevel
+        let result = store.record(levelID: outcome.level.id,
+                                  score: outcome.score,
+                                  stars: outcome.stars,
+                                  unlockedLevel: unlocked,
+                                  completed: outcome.completed)
         progress = store.data
+        switch result {
+        case .success:
+            saveWarning = nil
+        case let .failure(error):
+            saveWarning = "Progress is safe for this session but could not be saved: \(error.message)"
+        }
     }
 }
 
