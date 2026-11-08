@@ -36,7 +36,7 @@ Seed mapping is specified, but the current generator/resolver use standard-libra
 
 ## Fresh unified verification
 
-Verified the combined application at `584971d040e75f316ae0be8cd06dab5e2cfe32fa`, not just the isolated feature branches. Subsequent delivery documentation does not change executable code.
+Verified the combined application at `584971d040e75f316ae0be8cd06dab5e2cfe32fa`, not just the isolated feature branches. Subsequent delivery documentation and whitespace-only cleanup do not change executable behavior.
 
 - `xcodegen generate`: succeeded; the generated project includes GuidedPlay sources, the native unit-test target, and both UI-test files.
 - `swift test --package-path Packages/Match3Core`: **83 passed, zero failures**. Includes rule regressions, hint legality/determinism, campaign migration/state transitions, UTC/seed goldens, daily persistence, and a 366-date/two-strategy replay corpus.

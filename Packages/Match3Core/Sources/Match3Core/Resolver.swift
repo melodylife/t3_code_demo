@@ -66,7 +66,7 @@ public struct Resolution: Sendable {
         return false
     }
 }
- 
+
 public struct InitialClearEvaluation: Sendable, Equatable {
     public let clearedCells: Set<Cell>
     public let clearedKinds: [TileKind: Int]
