@@ -36,6 +36,7 @@
 		E51FCCDCA98022D9AA2A2395 /* SoundPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1124588FAE6F91E8DB86A0C7 /* SoundPlayer.swift */; };
 		E6B77E1FF1802CFEE2486583 /* DailyPuzzleViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B8D06E17B4B84796F6A878 /* DailyPuzzleViews.swift */; };
 		E8C5D2DE42C6B13BD361D4D2 /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6581C607A196CDC85BF9B71E /* Haptics.swift */; };
+		9C1D5E7A3B8F2C6E0A4D9B7C /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E2A9B7C3D1F4A0E8B6C2D5F /* SplashScreenView.swift */; };
 		E9DEE4F9FF7B5526B31A3449 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FE4CB6F3A969F6BCD0999FE /* RootView.swift */; };
 		E9EF8CAC64D054E62191BC6D /* EmojiAtlas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B01EC5D9E2DD5E4FBA9CBBF /* EmojiAtlas.swift */; };
 		F89D48856F2EF56A4D5BC320 /* Match3Core in Frameworks */ = {isa = PBXBuildFile; productRef = 3E6BCB3DE14969CE6E2405E4 /* Match3Core */; };
@@ -74,6 +75,7 @@
 		2F13844CF1D3E7C77DABCB51 /* GameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameScene.swift; sourceTree = "<group>"; };
 		39B8D06E17B4B84796F6A878 /* DailyPuzzleViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyPuzzleViews.swift; sourceTree = "<group>"; };
 		3D00093BB07E10984632E463 /* LevelIntroOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelIntroOverlay.swift; sourceTree = "<group>"; };
+		5E2A9B7C3D1F4A0E8B6C2D5F /* SplashScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreenView.swift; sourceTree = "<group>"; };
 		5ABF6985310CAA56B00F6480 /* DailyPuzzleModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyPuzzleModel.swift; sourceTree = "<group>"; };
 		640CAEF096CECE887367ED8A /* HintBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HintBannerView.swift; sourceTree = "<group>"; };
 		65314C710CB785F8097C2352 /* GameEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameEngine.swift; sourceTree = "<group>"; };
@@ -154,6 +156,7 @@
 				BEC043015A54730C68F646DA /* MenuView.swift */,
 				7BA003922C81205EB32E6D8D /* ResultOverlay.swift */,
 				1FE4CB6F3A969F6BCD0999FE /* RootView.swift */,
+				5E2A9B7C3D1F4A0E8B6C2D5F /* SplashScreenView.swift */,
 				B12E0D20AA6EEC6D4D67FF17 /* SpriteBoardView.swift */,
 				247E701D188EBA43FFBD04C8 /* Theme.swift */,
 			);
@@ -412,6 +415,7 @@
 				518AEB4B475F117EFEFA6982 /* ResultOverlay.swift in Sources */,
 				E9DEE4F9FF7B5526B31A3449 /* RootView.swift in Sources */,
 				E51FCCDCA98022D9AA2A2395 /* SoundPlayer.swift in Sources */,
+				9C1D5E7A3B8F2C6E0A4D9B7C /* SplashScreenView.swift in Sources */,
 				71A98EE499069D6D643527B4 /* SpecialIntro.swift in Sources */,
 				B3DA49F9CB475AE46C51F98A /* SpriteBoardView.swift in Sources */,
 				6AB6A5F086DB6968D440409E /* Theme.swift in Sources */,

@@ -2,11 +2,16 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject private var app: AppModel
+    @State private var showsSplash = true
 
     var body: some View {
         ZStack {
             GradientBackground()
-            if let engine = app.engine {
+            if showsSplash {
+                SplashScreenView { showsSplash = false }
+                    .transition(.opacity)
+                    .zIndex(1)
+            } else if let engine = app.engine {
                 GameScreen(engine: engine)
                     .id(engine.sessionID)
                     .transition(.opacity)
@@ -15,6 +20,7 @@ struct RootView: View {
                     .transition(.opacity)
             }
         }
+        .animation(.easeInOut(duration: 0.35), value: showsSplash)
         .animation(.easeInOut(duration: 0.22), value: app.engine?.sessionID)
     }
 }
