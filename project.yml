@@ -1,0 +1,69 @@
+name: EmojiMatch
+options:
+  bundleIdPrefix: com.sunchang
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+
+packages:
+  Match3Core:
+    path: Packages/Match3Core
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    SWIFT_STRICT_CONCURRENCY: minimal
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+
+targets:
+  EmojiMatch:
+    type: application
+    platform: iOS
+    sources:
+      - path: App/Sources
+      - path: App/Resources
+    dependencies:
+      - package: Match3Core
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: EmojiMatch
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIRequiresFullScreen: true
+        ITSAppUsesNonExemptEncryption: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.sunchang.emojimatch
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        GENERATE_INFOPLIST_FILE: NO
+        SUPPORTS_MACCATALYST: NO
+
+  EmojiMatchUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: App/UITests
+    dependencies:
+      - target: EmojiMatch
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.sunchang.emojimatch.uitests
+        TEST_TARGET_NAME: EmojiMatch
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGNING_ALLOWED: NO
+
+schemes:
+  EmojiMatch:
+    build:
+      targets:
+        EmojiMatch: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - EmojiMatchUITests
