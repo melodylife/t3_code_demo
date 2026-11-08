@@ -1,6 +1,6 @@
 # EmojiMatch — Game Experience Implementation Plan
 
-Status: proposed; no gameplay changes implemented.
+Status: implemented and integrated on `feat/game-experience`. See [delivery notes](docs/GAME_EXPERIENCE_DELIVERY.md) for feature assignments, fresh unified test results, preview controls, and remaining manual release checks. The original proposal and initial-review evidence below are retained for context.
 
 This document proposes exactly three features: **Guided Play**, **Star Chase**, and **Daily Puzzle**. They address learning, mastery, and replayability respectively. Implement them in that order, preserving the existing Foundation-only rules package and the resolve-first/animate-second contract.
 
