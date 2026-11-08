@@ -93,7 +93,7 @@ struct DailyPuzzleExitConfirmation: ViewModifier {
     let leave: () -> Void
 
     func body(content: Content) -> some View {
-        content.confirmationDialog("Leave this Daily Puzzle?", isPresented: $isPresented, titleVisibility: .visible) {
+        content.alert("Leave this Daily Puzzle?", isPresented: $isPresented) {
             Button("Leave Daily Puzzle", role: .destructive, action: leave)
             Button("Keep Playing", role: .cancel) { }
         } message: {
