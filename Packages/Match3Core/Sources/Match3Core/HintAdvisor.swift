@@ -154,8 +154,10 @@ public enum HintAdvisor {
             // Find the unmet kind with the most cleared tiles in this move
             let matchingKinds = unmetCollectionKinds.filter { (best.evaluation.clearedKinds[$0] ?? 0) > 0 }
             let primaryKind = matchingKinds.max {
-                (best.evaluation.clearedKinds[$0] ?? 0) < (best.evaluation.clearedKinds[$1] ?? 0)
-            } ?? matchingKinds.first!
+                let left = best.evaluation.clearedKinds[$0] ?? 0
+                let right = best.evaluation.clearedKinds[$1] ?? 0
+                return left == right ? $0.index > $1.index : left < right
+            }!
             let count = best.evaluation.clearedKinds[primaryKind, default: 0]
             reason = .collectObjective(kind: primaryKind, clearedCount: count)
         } else if let special = createdSpecial {

@@ -55,13 +55,27 @@ final class GameEngine: ObservableObject, GameSceneDelegate {
                                            rng: &generator)
         scene = GameScene(level: level, board: board, rng: generator)
         scene.gameDelegate = self
+        scene.hintObjectiveKinds = { [weak self] in self?.unmetCollectionKinds ?? [] }
+        scene.onClearFeedback = { [weak self] points, multiplier, spawnedSpecial in
+            self?.receiveClearFeedback(points: points, multiplier: multiplier, spawnedSpecial: spawnedSpecial)
+        }
     }
 
     deinit {
         feedbackDismissal?.cancel()
     }
 
-    var canAcceptMoves: Bool { phase.canAcceptMoves && !isResolving && !inputBlocked }
+    var canAcceptMoves: Bool {
+        phase.canAcceptMoves && !isResolving && !inputBlocked && !scene.isInputGated
+    }
+
+    var unmetCollectionKinds: Set<TileKind> {
+        Set(level.objectives.compactMap { objective in
+            guard objective.type == .collect, tracker.current(for: objective) < objective.target,
+                  let index = objective.tileKind else { return nil }
+            return TileKind(index)
+        })
+    }
     var showsFinalResult: Bool { phase.showsFinalResult }
     var hasGuaranteedClear: Bool { phase.hasGuaranteedClear }
     var canChaseStars: Bool { phase == .goalReached && movesLeft > 0 && earnedStars < 3 }
@@ -144,6 +158,8 @@ final class GameEngine: ObservableObject, GameSceneDelegate {
     }
 
     func resetTransientState() {
+        scene.inputEnabled = false
+        scene.clearInstructionState()
         feedbackDismissal?.cancel()
         feedbackDismissal = nil
         clearFeedback = nil

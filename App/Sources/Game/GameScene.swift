@@ -26,27 +26,25 @@ final class GameScene: SKScene {
     weak var gameDelegate: GameSceneDelegate?
 
     var inputEnabled = true {
-        didSet { if !inputEnabled { clearSelection(); clearHint() } }
+        didSet { if !inputEnabled { clearInstructionState() } }
     }
 
     /// Input gating for instructional overlays, tutorials, and modal dialogs.
     var isInputGated = false {
         didSet {
-            if isInputGated {
-                clearSelection()
-                clearHint()
-            }
+            if isInputGated { clearInstructionState() }
         }
     }
 
     /// Settled board status: true when no cascades are actively playing.
-    var isSettled: Bool { playback == nil }
+    var isSettled: Bool { playback == nil && rejectionRemaining <= 0 }
 
     /// Settled board callback, triggered after every cascade playback completes.
     var onBoardSettled: ((Board) -> Void)?
 
     /// Integration seam for parent Feature 2 feedback: emitted from the actual .clear step.
-    var onClearFeedback: ((_ points: Int, _ multiplier: Double, _ spawnedSpecial: Tile?) -> Void)?
+    var onClearFeedback: ((_ points: Int, _ multiplier: Double, _ spawnedSpecial: Bool) -> Void)?
+    var hintObjectiveKinds: (() -> Set<TileKind>)?
 
     /// Notification for queued special introductions.
     var onSpecialSpawned: ((Tile) -> Void)?
@@ -82,7 +80,8 @@ final class GameScene: SKScene {
     private var dragHandled = false
 
     private var playback: Playback?
-    private var isAnimating: Bool { playback != nil }
+    private var rejectionRemaining: TimeInterval = 0
+    private var isAnimating: Bool { !isSettled }
     private var lastUpdateTime: TimeInterval?
     private var idleSeconds: TimeInterval = 0
     private var hintedPair: (Cell, Cell)?
@@ -260,6 +259,7 @@ final class GameScene: SKScene {
                                              paletteCount: level.paletteCount,
                                              rng: &rng)
         guard resolution.wasAccepted else {
+            rejectionRemaining = Timing.rejectOut + Timing.rejectBack + Timing.fallPad
             animateRejectedSwap(a, b)
             Haptics.reject()
             SoundPlayer.shared.play(.error)
@@ -272,8 +272,10 @@ final class GameScene: SKScene {
         start(resolution.steps, completion: { [weak self] in
             guard let self else { return }
             self.verifyNodeTable(expected: resolution.finalBoard)
-            self.onBoardSettled?(resolution.finalBoard)
+            // Resolve the session phase first so a queued tip cannot cover a
+            // goal-choice or final result produced by this very cascade.
             self.gameDelegate?.sceneDidSettle(board: resolution.finalBoard)
+            self.onBoardSettled?(resolution.finalBoard)
         })
         return true
     }
@@ -305,6 +307,10 @@ final class GameScene: SKScene {
     override func update(_ currentTime: TimeInterval) {
         let delta = lastUpdateTime.map { min(0.1, max(0, currentTime - $0)) } ?? 0
         lastUpdateTime = currentTime
+        if rejectionRemaining > 0 {
+            rejectionRemaining = max(0, rejectionRemaining - delta)
+            return
+        }
 
         guard var active = playback else {
             if inputEnabled && !isInputGated {
@@ -430,7 +436,7 @@ final class GameScene: SKScene {
         }
 
         // Feature 2 parent feedback hook
-        onClearFeedback?(points, multiplier, spawned.first?.tile)
+        onClearFeedback?(points, multiplier, !spawned.isEmpty)
 
         // Existing delegate signature maintained 100% compatible
         gameDelegate?.sceneDidClear(points: points, kinds: kinds, spawnedSpecial: !spawned.isEmpty)
@@ -564,9 +570,22 @@ final class GameScene: SKScene {
         return suggestion
     }
 
+    /// A deterministic teaching pair, without ranking a different legal move.
+    @discardableResult
+    func showTeachingHint(from source: Cell, to destination: Cell) -> HintSuggestion? {
+        guard inputEnabled, !isInputGated, isSettled,
+              let evaluation = Resolver.evaluateInitialClear(board, source, destination) else { return nil }
+        let suggestion = HintSuggestion(from: source, to: destination,
+                                        reason: .standardMatch(clearedCount: evaluation.clearedCells.count),
+                                        clearedCount: evaluation.clearedCells.count)
+        displayHint(suggestion)
+        return suggestion
+    }
+
     private func showHintIfNeeded() {
         guard hintedPair == nil, inputEnabled, !isInputGated, isSettled else { return }
-        if let suggestion = HintAdvisor.suggest(board: board) {
+        if let suggestion = HintAdvisor.suggest(board: board,
+                                                unmetCollectionKinds: hintObjectiveKinds?() ?? []) {
             displayHint(suggestion, isIdle: true)
         } else if let pair = Resolver.firstAvailableMove(board) {
             let fallback = HintSuggestion(from: pair.0, to: pair.1, reason: .standardMatch(clearedCount: 3), clearedCount: 3)
@@ -624,6 +643,14 @@ final class GameScene: SKScene {
         let path = CGMutablePath()
         path.move(to: pA)
         path.addLine(to: pB)
+        let length = max(1, hypot(pB.x - pA.x, pB.y - pA.y))
+        let unit = CGPoint(x: (pB.x - pA.x) / length, y: (pB.y - pA.y) / length)
+        let wing = layout.tile * 0.16
+        path.move(to: CGPoint(x: pB.x - unit.x * wing - unit.y * wing,
+                             y: pB.y - unit.y * wing + unit.x * wing))
+        path.addLine(to: pB)
+        path.addLine(to: CGPoint(x: pB.x - unit.x * wing + unit.y * wing,
+                                y: pB.y - unit.y * wing - unit.x * wing))
 
         let line = SKShapeNode(path: path)
         line.strokeColor = UIColor.systemYellow.withAlphaComponent(0.85)
@@ -731,7 +758,8 @@ final class GameScene: SKScene {
 
     /// Accessibility selection and swap parity with touch events.
     func selectCellAccessibility(at cell: Cell) {
-        guard inputEnabled, !isInputGated, isSettled, board[cell] != nil else { return }
+        guard inputEnabled, !isInputGated, isSettled,
+              board.contains(cell), board[cell] != nil else { return }
         clearHint()
 
         if let selected = selectedCell {

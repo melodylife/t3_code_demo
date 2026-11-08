@@ -6,10 +6,21 @@ struct GameScreen: View {
     @EnvironmentObject private var app: AppModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showingDailyExit = false
+    @StateObject private var learning: GuidedPlayCoordinator
+
+    init(engine: GameEngine) {
+        self.engine = engine
+        _learning = StateObject(wrappedValue: GuidedPlayCoordinator(scene: engine.scene) {
+            engine.phase.canAcceptMoves && !engine.isResolving && !engine.inputBlocked
+        })
+    }
 
     var body: some View {
         VStack(spacing: 10) {
-            HUDView(engine: engine, exit: requestExit)
+            HUDView(engine: engine, exit: requestExit,
+                    requestHint: { learning.requestHint(unmetKinds: engine.unmetCollectionKinds) },
+                    openHelp: { learning.openHowToPlay() },
+                    learningBlocksInput: learning.blocksInput)
             Spacer(minLength: 8)
             SpriteBoardView(scene: engine.scene)
                 .aspectRatio(1, contentMode: .fit)
@@ -17,6 +28,8 @@ struct GameScreen: View {
             Spacer(minLength: 8)
         }
         .padding(.top, 6)
+        .accessibilityHidden(learning.blocksInput || showingDailyExit
+                             || engine.phase == .goalReached || engine.showsFinalResult)
         .modifier(DailyPuzzleExitConfirmation(isPresented: $showingDailyExit,
                                               leave: { app.exitGame() }))
         .onChange(of: showingDailyExit) { _, shown in
@@ -30,7 +43,7 @@ struct GameScreen: View {
         }
         .overlay(alignment: .top) {
             VStack(spacing: 8) {
-                if let feedback = engine.clearFeedback {
+                if let feedback = engine.clearFeedback, engine.phase.canAcceptMoves, !learning.blocksInput {
                     ClearFeedbackView(feedback: feedback)
                         .transition(.scale.combined(with: .opacity))
                 }
@@ -42,6 +55,38 @@ struct GameScreen: View {
             }
             .padding(.top, 92)
         }
+        .overlay(alignment: .bottom) {
+            if let hint = learning.activeHint, !learning.blocksInput, engine.phase.canAcceptMoves {
+                HintBannerView(hint: hint, palette: engine.level.palette) { learning.dismissHint() }
+                    .padding(.bottom, 12)
+            }
+        }
+        .overlay {
+            if learning.showsLevelIntro {
+                LevelIntroOverlay(level: engine.level,
+                                  onStart: { learning.dismissLevelIntro() },
+                                  onSkipTips: { learning.dismissLevelIntro(skipTips: true) })
+            } else if let special = learning.activeSpecialIntro {
+                SpecialIntroOverlay(type: special) { learning.dismissSpecialIntro() }
+            }
+        }
+        .fullScreenCover(isPresented: Binding(get: { learning.showsPractice }, set: { shown in
+            if !shown { learning.closePractice() }
+        })) {
+            GuidedPracticeView(store: learning.store) { learning.closePractice() }
+                .interactiveDismissDisabled()
+        }
+        .sheet(isPresented: Binding(get: { learning.showsHowToPlay }, set: { shown in
+            if !shown { learning.closeHowToPlay() }
+        })) {
+            HowToPlayView()
+        }
+        .onAppear { engine.scene.reduceMotionOverride = reduceMotion }
+        .onChange(of: reduceMotion) { _, value in
+            engine.scene.reduceMotionOverride = value
+            learning.dismissHint()
+        }
+        .onChange(of: engine.phase) { _, _ in learning.refreshPresentation() }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: engine.phase)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: engine.clearFeedback?.id)
     }
@@ -60,6 +105,9 @@ struct GameScreen: View {
 struct HUDView: View {
     @ObservedObject var engine: GameEngine
     let exit: () -> Void
+    let requestHint: () -> Void
+    let openHelp: () -> Void
+    let learningBlocksInput: Bool
 
     var body: some View {
         VStack(spacing: 8) {
@@ -105,6 +153,17 @@ struct HUDView: View {
 
             objectives
             starProgress
+            HStack {
+                Button(action: requestHint) { Label("Hint", systemImage: "lightbulb") }
+                    .accessibilityIdentifier("hintButton")
+                Spacer()
+                Button(action: openHelp) { Label("How to Play", systemImage: "questionmark.circle") }
+                    .accessibilityIdentifier("gameHelpButton")
+            }
+            .font(.subheadline.weight(.semibold))
+            .buttonStyle(.bordered)
+            .disabled(!engine.canAcceptMoves || learningBlocksInput)
+            .padding(.horizontal, 16)
         }
     }
 

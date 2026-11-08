@@ -6,110 +6,53 @@ struct LevelIntroOverlay: View {
     let onStart: () -> Void
     let onSkipTips: () -> Void
 
-    init(level: Level, onStart: @escaping () -> Void, onSkipTips: @escaping () -> Void) {
-        self.level = level
-        self.onStart = onStart
-        self.onSkipTips = onSkipTips
-    }
-
     private var objectiveDescription: String {
-        var lines: [String] = []
-        for obj in level.objectives {
-            switch obj.type {
+        level.objectives.map { objective in
+            switch objective.type {
             case .collect:
-                let fruit = level.palette[safe: obj.tileKind ?? 0] ?? "Fruit"
-                lines.append("Collect \(obj.target) \(fruit)")
+                return "Collect \(objective.target) \(level.palette[safe: objective.tileKind ?? 0] ?? "fruit")"
             case .score:
-                lines.append("Score \(obj.target) points")
+                return "Score \(objective.target) points"
             }
-        }
-        return lines.joined(separator: " and ")
+        }.joined(separator: " and ")
     }
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.65)
-                .ignoresSafeArea()
-
-            VStack(spacing: 18) {
-                VStack(spacing: 6) {
-                    Text("LEVEL \(level.id) GOAL")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(Color.yellow)
-                        .tracking(1.5)
-
-                    Text(objectiveDescription)
-                        .font(.system(size: 22, weight: .heavy, design: .rounded))
-                        .foregroundColor(.white)
-                        .multilineTextAlignment(.center)
-                }
-
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(alignment: .top, spacing: 10) {
-                        Text("👉")
-                            .font(.system(size: 20))
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("How to Move")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(.white)
-                            Text("Swipe any tile toward an adjacent neighbor, or tap two neighbors one after another.")
-                                .font(.system(size: 13))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    Divider().background(Color.white.opacity(0.15))
-
-                    HStack(alignment: .top, spacing: 10) {
-                        Text("🎯")
-                            .font(.system(size: 20))
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Winning Condition")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(.white)
-                            Text("Complete the goal before running out of moves (\(level.moves) moves available).")
-                                .font(.system(size: 13))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                .padding(16)
-                .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.08)))
-
-                VStack(spacing: 10) {
-                    Button {
-                        onStart()
-                    } label: {
-                        Text("Start")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
-                            .foregroundColor(.black)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(Capsule().fill(Color.yellow))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("startLevelButton")
-
-                    Button {
-                        onSkipTips()
-                    } label: {
-                        Text("Skip Tips")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.8))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("skipTipsButton")
-                }
+            Color.black.opacity(0.65).ignoresSafeArea()
+            ViewThatFits(in: .vertical) {
+                card
+                ScrollView { card }
             }
             .padding(24)
-            .background(
-                RoundedRectangle(cornerRadius: 24)
-                    .fill(Color(UIColor.systemGray6).opacity(0.96))
-                    .shadow(color: .black.opacity(0.5), radius: 24, x: 0, y: 12)
-            )
-            .padding(.horizontal, 28)
+            .frame(maxWidth: 360)
+            .background(RoundedRectangle(cornerRadius: 24).fill(Theme.backgroundTop))
+            .padding(24)
         }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Level \(level.id) Goal: \(objectiveDescription)")
+        .accessibilityAddTraits(.isModal)
+    }
+
+    private var card: some View {
+        VStack(spacing: 18) {
+            Text(level.id == 0 ? "DAILY GOAL" : "LEVEL \(level.id) GOAL")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Theme.accentSecondary)
+            Text(objectiveDescription)
+                .font(.title2.bold())
+                .multilineTextAlignment(.center)
+            Label("Swipe a tile toward a neighbor, or tap two neighboring tiles in sequence.", systemImage: "hand.draw")
+                .font(.body)
+            Text("Complete every goal within \(level.moves) moves. Invalid swaps do not use a move.")
+                .font(.body)
+                .foregroundStyle(.secondary)
+            Button("Start", action: onStart)
+                .font(.headline)
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.accent)
+                .accessibilityIdentifier("startLevelButton")
+            Button("Skip Tips", action: onSkipTips)
+                .font(.subheadline)
+                .accessibilityIdentifier("skipTipsButton")
+        }
     }
 }

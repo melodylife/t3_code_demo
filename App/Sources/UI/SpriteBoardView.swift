@@ -71,6 +71,7 @@ final class CellAccessibilityElement: UIAccessibilityElement {
         self.boardView = containerView
         super.init(accessibilityContainer: containerView)
         isAccessibilityElement = true
+        accessibilityIdentifier = "cell_\(cell.row)_\(cell.col)"
         accessibilityTraits = [.button]
     }
 
@@ -99,7 +100,12 @@ final class CellAccessibilityElement: UIAccessibilityElement {
             accessibilityFrame = UIAccessibility.convertToScreenCoordinates(viewRect, in: boardView)
         }
 
+        if !scene.inputEnabled || scene.isInputGated || !scene.isSettled {
+            accessibilityTraits.insert(.notEnabled)
+        }
+
         var actions: [UIAccessibilityCustomAction] = []
+        let sourceCell = cell
         let directions: [(String, Cell)] = [
             ("Swap Right", cell.offset(col: 1)),
             ("Swap Down", cell.offset(row: 1)),
@@ -111,7 +117,7 @@ final class CellAccessibilityElement: UIAccessibilityElement {
             if scene.board.contains(target), scene.board[target] != nil {
                 let action = UIAccessibilityCustomAction(name: name, actionHandler: { [weak scene] _ in
                     guard let scene else { return false }
-                    return scene.commitSwap(from: self.cell, to: target)
+                    return scene.commitSwap(from: sourceCell, to: target)
                 })
                 actions.append(action)
             }
@@ -120,7 +126,8 @@ final class CellAccessibilityElement: UIAccessibilityElement {
     }
 
     override func accessibilityActivate() -> Bool {
-        guard let boardView, let scene = boardView.gameScene else { return false }
+        guard let boardView, let scene = boardView.gameScene,
+              scene.inputEnabled, !scene.isInputGated, scene.isSettled else { return false }
         scene.selectCellAccessibility(at: cell)
         return true
     }

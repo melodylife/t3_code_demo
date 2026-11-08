@@ -4,9 +4,9 @@ struct GuidedPracticeView: View {
     @StateObject private var coordinator: GuidedPracticeCoordinator
     let onDismiss: () -> Void
 
-    init(onDismiss: @escaping () -> Void) {
+    init(store: LearningStore = .shared, onDismiss: @escaping () -> Void) {
         self.onDismiss = onDismiss
-        _coordinator = StateObject(wrappedValue: GuidedPracticeCoordinator())
+        _coordinator = StateObject(wrappedValue: GuidedPracticeCoordinator(store: store))
     }
 
     var body: some View {
@@ -30,7 +30,6 @@ struct GuidedPracticeView: View {
 
                     Button {
                         coordinator.skipPractice()
-                        onDismiss()
                     } label: {
                         Text("Skip")
                             .font(.system(size: 14, weight: .semibold))
@@ -82,7 +81,6 @@ struct GuidedPracticeView: View {
 
                             Button {
                                 coordinator.completePractice()
-                                onDismiss()
                             } label: {
                                 Text("Start Playing")
                                     .font(.system(size: 16, weight: .bold, design: .rounded))

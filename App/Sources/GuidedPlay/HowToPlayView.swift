@@ -26,7 +26,8 @@ struct HowToPlayView: View {
                         guideSection(title: "Level Objectives", icon: "target") {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("• **Collect Fruit (🎯)**: Clear the required quantity of specific fruit shown in the top HUD before running out of moves.")
-                                Text("• **Score Target (⭐️)**: Reach designated score thresholds to earn 1, 2, or 3 stars.")
+                                Text("• **Score Target (⭐️)**: Reach the level's score goal. Every completed goal earns at least one star.")
+                                Text("Choose Star Chase to spend remaining moves toward higher score thresholds.")
                             }
                         }
 
@@ -53,7 +54,7 @@ struct HowToPlayView: View {
                                 Text("• **Tile Labels**: VoiceOver announces fruit kind, row, column, and special badges.")
                                 Text("• **Direct Double-Tap**: Double-tap a tile to select it, then double-tap an adjacent neighbor to swap.")
                                 Text("• **Rotor Actions**: Use VoiceOver Actions rotor to 'Swap Right', 'Swap Down', 'Swap Left', or 'Swap Up'.")
-                                Text("• **Reduce Motion**: All animations and pulsing scale effects respect your device's Reduce Motion setting.")
+                                Text("• **Reduce Motion**: Hint pulsing and instructional overlay motion respect your device's Reduce Motion setting.")
                             }
                         }
 

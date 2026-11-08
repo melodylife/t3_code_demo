@@ -6,6 +6,7 @@ struct MenuView: View {
     @AppStorage("soundEnabled") private var soundEnabled = true
     @AppStorage("hapticsEnabled") private var hapticsEnabled = true
     @AppStorage(DailyPuzzleFeature.defaultsKey) private var dailyPuzzleEnabled = false
+    @State private var showsHowToPlay = false
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 5)
 
@@ -29,11 +30,18 @@ struct MenuView: View {
                             .font(.caption)
                     }
                 }
+                Button { showsHowToPlay = true } label: {
+                    Label("How to Play", systemImage: "questionmark.circle.fill")
+                        .font(.headline)
+                }
+                .buttonStyle(.bordered)
+                .accessibilityIdentifier("menuHelpButton")
                 settings
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 28)
         }
+        .sheet(isPresented: $showsHowToPlay) { HowToPlayView() }
     }
 
     private var header: some View {

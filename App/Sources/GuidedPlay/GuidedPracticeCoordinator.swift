@@ -17,8 +17,10 @@ final class GuidedPracticeCoordinator: ObservableObject {
     let targetPair: (Cell, Cell) = (Cell(row: 0, col: 2), Cell(row: 1, col: 2))
 
     var onFinished: (() -> Void)?
+    private let store: LearningStore
 
-    init() {
+    init(store: LearningStore = .shared) {
+        self.store = store
         // Deterministic 3x3 practice layout
         // Row 0: 🍎 🍎 🍌  (0, 0, 1)
         // Row 1: 🍇 🍊 🍎  (2, 3, 0)
@@ -58,6 +60,7 @@ final class GuidedPracticeCoordinator: ObservableObject {
         // Display initial hint pointing to the target swap
         scene.onBoardSettled = { [weak self] _ in
             guard let self else { return }
+            self.scene.inputEnabled = false
             self.swapCompleted = true
             self.state = .completed
         }
@@ -65,17 +68,18 @@ final class GuidedPracticeCoordinator: ObservableObject {
         // Highlight the teaching swap immediately
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             guard let self, self.state == .instructional else { return }
-            self.scene.requestHint(unmetCollectionKinds: [TileKind(0)])
+            self.scene.showTeachingHint(from: self.targetPair.0, to: self.targetPair.1)
         }
     }
 
     func completePractice() {
-        LearningStore.shared.markTutorialCompleted()
+        guard state == .completed else { return }
+        store.markTutorialCompleted()
         onFinished?()
     }
 
     func skipPractice() {
-        LearningStore.shared.skipTutorial()
+        store.skipTutorial()
         onFinished?()
     }
 }

@@ -2,6 +2,14 @@ import XCTest
 @testable import Match3Core
 
 final class HintAdvisorTests: XCTestCase {
+    func testEqualCollectionCountsExplainLowestKindDeterministically() {
+        let board = makeBoard(["WW01", "0101"])
+        for _ in 0..<20 {
+            let hint = HintAdvisor.suggest(board: board,
+                                           unmetCollectionKinds: [TileKind(1), TileKind(0)])
+            XCTAssertEqual(hint?.reason, .collectObjective(kind: TileKind(0), clearedCount: 3))
+        }
+    }
 
     func testNoLegalMoveReturnsNil() {
         // 3x3 board with no matches and no legal moves

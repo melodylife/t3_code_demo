@@ -1,90 +1,62 @@
 import Combine
 import Foundation
 import Match3Core
-import SwiftUI
 
-/// Coordinates Guided Play features (hints, one-time special intros, level objectives tip)
-/// with the active `GameScene` without requiring changes to `GameEngine`.
+/// Owns learning presentation, independently of campaign/daily scoring. The
+/// engine's phase gate and this scene instruction gate are deliberately separate.
 final class GuidedPlayCoordinator: ObservableObject {
     let scene: GameScene
     let store: LearningStore
+    private let canPresentInstruction: () -> Bool
 
-    @Published var activeHint: HintSuggestion?
-    @Published var activeSpecialIntro: SpecialIntroType?
-    @Published var showsLevelIntro: Bool = false
-    @Published var showsPractice: Bool = false
-    @Published var showsHowToPlay: Bool = false
+    @Published private(set) var activeHint: HintSuggestion?
+    @Published private(set) var activeSpecialIntro: SpecialIntroType?
+    @Published private(set) var showsLevelIntro = false
+    @Published private(set) var showsPractice = false
+    @Published private(set) var showsHowToPlay = false
+    private var pendingSpecials: [SpecialIntroType] = []
 
-    private var pendingSpecialsQueue: [SpecialIntroType] = []
+    var blocksInput: Bool {
+        showsLevelIntro || showsPractice || showsHowToPlay || activeSpecialIntro != nil
+    }
 
-    init(scene: GameScene, store: LearningStore = .shared) {
+    init(scene: GameScene, store: LearningStore = .shared,
+         canPresentInstruction: @escaping () -> Bool = { true }) {
         self.scene = scene
         self.store = store
-        setupHooks()
-        checkInitialState()
-    }
-
-    private func setupHooks() {
-        // Observe hinted suggestion updates
-        scene.onHintChanged = { [weak self] hint in
-            DispatchQueue.main.async {
-                self?.activeHint = hint
-            }
-        }
-
-        // Catch newly spawned specials
-        scene.onSpecialSpawned = { [weak self] tile in
-            guard let self, let introType = SpecialIntroType.from(tile: tile) else { return }
-            if !self.store.hasIntroducedSpecial(introType.id) && !self.pendingSpecialsQueue.contains(introType) {
-                self.pendingSpecialsQueue.append(introType)
-            }
-        }
-
-        // Settled board hook: queued special introductions appear ONLY on settled boards!
-        let existingSettledHook = scene.onBoardSettled
-        scene.onBoardSettled = { [weak self] board in
-            existingSettledHook?(board)
-            self?.handleBoardSettled()
-        }
-    }
-
-    private func checkInitialState() {
-        // First-time play check for level objective introduction
-        if !store.hasSeenTips && scene.level.id == 1 {
-            showsLevelIntro = true
-            scene.isInputGated = true
-        }
-
-        // Check if starting board already contains specials not yet introduced
+        self.canPresentInstruction = canPresentInstruction
+        showsLevelIntro = !store.hasSeenTips
+        updateInputGate()
+        scene.onHintChanged = { [weak self] hint in self?.activeHint = hint }
+        scene.onSpecialSpawned = { [weak self] tile in self?.queueSpecial(tile) }
+        scene.onBoardSettled = { [weak self] _ in self?.refreshPresentation() }
         for cell in scene.board.cells {
-            if let tile = scene.board[cell], let type = SpecialIntroType.from(tile: tile) {
-                if !store.hasIntroducedSpecial(type.id) && !pendingSpecialsQueue.contains(type) {
-                    pendingSpecialsQueue.append(type)
-                }
-            }
+            if let tile = scene.board[cell] { queueSpecial(tile) }
         }
     }
 
-    private func handleBoardSettled() {
-        guard activeSpecialIntro == nil, !showsLevelIntro, !showsPractice else { return }
-        guard let nextSpecial = pendingSpecialsQueue.first else { return }
-        pendingSpecialsQueue.removeFirst()
+    private func queueSpecial(_ tile: Tile) {
+        guard let type = SpecialIntroType.from(tile: tile),
+              !store.hasIntroducedSpecial(type.id), !pendingSpecials.contains(type) else { return }
+        pendingSpecials.append(type)
+    }
 
-        // Gate board input and clear any active hints/drags
+    /// Also called after entering Star Chase: the goal-choice/result overlay
+    /// always takes precedence over a tip queued by the same last cascade.
+    func refreshPresentation() {
+        guard scene.isSettled, canPresentInstruction(), !blocksInput else { return }
+        while let first = pendingSpecials.first, store.hasIntroducedSpecial(first.id) {
+            pendingSpecials.removeFirst()
+        }
+        guard !pendingSpecials.isEmpty else { return }
         scene.clearInstructionState()
-        scene.isInputGated = true
-
-        DispatchQueue.main.async {
-            self.store.markSpecialIntroduced(nextSpecial.id)
-            self.activeSpecialIntro = nextSpecial
-        }
+        activeSpecialIntro = pendingSpecials.removeFirst()
+        updateInputGate()
     }
-
-    // MARK: - User Actions
 
     func requestHint(unmetKinds: Set<TileKind> = []) {
-        let suggestion = scene.requestHint(unmetCollectionKinds: unmetKinds)
-        activeHint = suggestion
+        guard !blocksInput, canPresentInstruction() else { return }
+        activeHint = scene.requestHint(unmetCollectionKinds: unmetKinds)
     }
 
     func dismissHint() {
@@ -93,41 +65,51 @@ final class GuidedPlayCoordinator: ObservableObject {
     }
 
     func dismissSpecialIntro() {
+        if let type = activeSpecialIntro { store.markSpecialIntroduced(type.id) }
         activeSpecialIntro = nil
-        scene.isInputGated = false
-        scene.clearInstructionState()
-
-        // Check if another special is queued
-        if !pendingSpecialsQueue.isEmpty {
-            handleBoardSettled()
-        }
+        updateInputGate()
+        refreshPresentation()
     }
 
     func dismissLevelIntro(skipTips: Bool = false) {
+        store.markTipsSeen()
         showsLevelIntro = false
-        scene.isInputGated = false
         if skipTips {
-            store.markTipsSeen()
+            store.skipTutorial()
+        } else if !store.hasCompletedTutorial {
+            showsPractice = true
         }
+        updateInputGate()
+        refreshPresentation()
     }
 
     func openPractice() {
+        guard scene.isSettled else { return }
         showsPractice = true
-        scene.isInputGated = true
+        scene.clearInstructionState()
+        updateInputGate()
     }
 
     func closePractice() {
         showsPractice = false
-        scene.isInputGated = false
+        updateInputGate()
+        refreshPresentation()
     }
 
     func openHowToPlay() {
+        guard scene.isSettled, !blocksInput else { return }
         showsHowToPlay = true
-        scene.isInputGated = true
+        scene.clearInstructionState()
+        updateInputGate()
     }
 
     func closeHowToPlay() {
         showsHowToPlay = false
-        scene.isInputGated = false
+        updateInputGate()
+        refreshPresentation()
+    }
+
+    private func updateInputGate() {
+        scene.isInputGated = blocksInput
     }
 }
