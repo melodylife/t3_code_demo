@@ -15,7 +15,7 @@ final class GameEngine: ObservableObject, GameSceneDelegate {
     struct ClearFeedback: Equatable, Identifiable {
         let id = UUID()
         let points: Int
-        let multiplier: Int
+        let multiplier: Double
         let spawnedSpecial: Bool
     }
 
@@ -110,7 +110,7 @@ final class GameEngine: ObservableObject, GameSceneDelegate {
 
     /// Feature 1's scene callback can forward exact resolver metadata here.
     /// Scoring remains exclusively in `sceneDidClear`, preventing double count.
-    func receiveClearFeedback(points: Int, multiplier: Int, spawnedSpecial: Bool) {
+    func receiveClearFeedback(points: Int, multiplier: Double, spawnedSpecial: Bool) {
         guard points > 0, multiplier > 0 else { return }
         feedbackDismissal?.cancel()
         clearFeedback = ClearFeedback(points: points,

@@ -133,7 +133,7 @@ private struct ClearFeedbackView: View {
     let feedback: GameEngine.ClearFeedback
 
     var body: some View {
-        Text("+\(feedback.points)  ×\(feedback.multiplier)\(feedback.spawnedSpecial ? "  ✨" : "")")
+        Text("+\(feedback.points)  ×\(String(format: "%g", feedback.multiplier))\(feedback.spawnedSpecial ? "  ✨" : "")")
             .font(.system(size: 16, weight: .heavy, design: .rounded))
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
