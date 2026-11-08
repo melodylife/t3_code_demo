@@ -16,6 +16,7 @@
 		655D8DD55D73F1EF3A68707D /* GameEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65314C710CB785F8097C2352 /* GameEngine.swift */; };
 		6AB6A5F086DB6968D440409E /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 247E701D188EBA43FFBD04C8 /* Theme.swift */; };
 		6FB4BFA297D31206AC849FB4 /* MenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEC043015A54730C68F646DA /* MenuView.swift */; };
+		6FCF22F3E0B0B152D981BF09 /* DailyPuzzleModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ABF6985310CAA56B00F6480 /* DailyPuzzleModel.swift */; };
 		852D8C200CFD85AF254C554F /* levels.json in Resources */ = {isa = PBXBuildFile; fileRef = 12F13DC2EBB9BDBFEA9D8A84 /* levels.json */; };
 		89D2483AA1E6F64589D830A6 /* GameScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = E191CBF8D95CAD22A698A27A /* GameScreen.swift */; };
 		93BF2C0294BA32ACBE390D63 /* TileNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C8CA5C717CCD25A043C0844 /* TileNode.swift */; };
@@ -23,6 +24,7 @@
 		B3DA49F9CB475AE46C51F98A /* SpriteBoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12E0D20AA6EEC6D4D67FF17 /* SpriteBoardView.swift */; };
 		DD4D12638E80062E7FE15B44 /* BoardLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D4734EACA67CE84240AEBC4 /* BoardLayout.swift */; };
 		E51FCCDCA98022D9AA2A2395 /* SoundPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1124588FAE6F91E8DB86A0C7 /* SoundPlayer.swift */; };
+		E6B77E1FF1802CFEE2486583 /* DailyPuzzleViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B8D06E17B4B84796F6A878 /* DailyPuzzleViews.swift */; };
 		E8C5D2DE42C6B13BD361D4D2 /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6581C607A196CDC85BF9B71E /* Haptics.swift */; };
 		E9DEE4F9FF7B5526B31A3449 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FE4CB6F3A969F6BCD0999FE /* RootView.swift */; };
 		E9EF8CAC64D054E62191BC6D /* EmojiAtlas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B01EC5D9E2DD5E4FBA9CBBF /* EmojiAtlas.swift */; };
@@ -49,6 +51,8 @@
 		247E701D188EBA43FFBD04C8 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		2D74F4B57D2A71DAAF5A9F41 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		2F13844CF1D3E7C77DABCB51 /* GameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameScene.swift; sourceTree = "<group>"; };
+		39B8D06E17B4B84796F6A878 /* DailyPuzzleViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyPuzzleViews.swift; sourceTree = "<group>"; };
+		5ABF6985310CAA56B00F6480 /* DailyPuzzleModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyPuzzleModel.swift; sourceTree = "<group>"; };
 		65314C710CB785F8097C2352 /* GameEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameEngine.swift; sourceTree = "<group>"; };
 		6581C607A196CDC85BF9B71E /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
 		6C8CA5C717CCD25A043C0844 /* TileNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TileNode.swift; sourceTree = "<group>"; };
@@ -96,6 +100,7 @@
 		229589202B544E2BDF0A9FF8 /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				39B8D06E17B4B84796F6A878 /* DailyPuzzleViews.swift */,
 				053F69E0215F027F43BD5E4A /* EmojiMatchApp.swift */,
 				E191CBF8D95CAD22A698A27A /* GameScreen.swift */,
 				BEC043015A54730C68F646DA /* MenuView.swift */,
@@ -171,6 +176,7 @@
 			isa = PBXGroup;
 			children = (
 				2D74F4B57D2A71DAAF5A9F41 /* AppModel.swift */,
+				5ABF6985310CAA56B00F6480 /* DailyPuzzleModel.swift */,
 			);
 			path = State;
 			sourceTree = "<group>";
@@ -289,6 +295,8 @@
 			files = (
 				435AC7B99A9BB67A6E157A6A /* AppModel.swift in Sources */,
 				DD4D12638E80062E7FE15B44 /* BoardLayout.swift in Sources */,
+				6FCF22F3E0B0B152D981BF09 /* DailyPuzzleModel.swift in Sources */,
+				E6B77E1FF1802CFEE2486583 /* DailyPuzzleViews.swift in Sources */,
 				E9EF8CAC64D054E62191BC6D /* EmojiAtlas.swift in Sources */,
 				1655492599E85BF2F7C5E089 /* EmojiMatchApp.swift in Sources */,
 				655D8DD55D73F1EF3A68707D /* GameEngine.swift in Sources */,
