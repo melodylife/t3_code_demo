@@ -5,11 +5,12 @@ import Match3Core
 final class GameEngine: ObservableObject, GameSceneDelegate {
     typealias Phase = StarChasePhase
 
-    struct SettledCampaignOutcome: Equatable {
-        let level: Level
+    struct SettledOutcome: Equatable {
+        let configuration: GameConfiguration
         let score: Int
         let stars: Int
         let completed: Bool
+        let movesUsed: Int
     }
 
     struct ClearFeedback: Equatable, Identifiable {
@@ -20,6 +21,7 @@ final class GameEngine: ObservableObject, GameSceneDelegate {
     }
 
     let sessionID = UUID()
+    let configuration: GameConfiguration
     let level: Level
     let scene: GameScene
 
@@ -27,25 +29,26 @@ final class GameEngine: ObservableObject, GameSceneDelegate {
     @Published private(set) var movesLeft: Int
     @Published private(set) var phase: Phase = .playing
     @Published private(set) var isResolving = false
+    @Published private(set) var inputBlocked = false
     @Published private(set) var clearFeedback: ClearFeedback?
 
-    var onSettledCampaignOutcome: ((SettledCampaignOutcome) -> Void)?
+    var onSettledOutcome: ((SettledOutcome) -> Void)?
 
     private var tracker = ObjectiveTracker()
     private var chaseState = StarChaseState()
     private var feedbackDismissal: DispatchWorkItem?
 
-    /// Campaign-compatible entry point. The seed overload is a small injection
-    /// seam for future session configurations without changing campaign seeds.
     convenience init(level: Level) {
-        self.init(level: level, seed: level.seed)
+        self.init(configuration: .campaign(level))
     }
 
-    init(level: Level, seed: UInt64) {
+    init(configuration: GameConfiguration) {
+        self.configuration = configuration
+        let level = configuration.level
         self.level = level
         movesLeft = level.moves
 
-        var generator = SplitMix64(seed: seed)
+        var generator = SplitMix64(seed: configuration.seed)
         let board = BoardGenerator.generate(rows: level.rows,
                                            cols: level.cols,
                                            paletteCount: level.paletteCount,
@@ -58,7 +61,7 @@ final class GameEngine: ObservableObject, GameSceneDelegate {
         feedbackDismissal?.cancel()
     }
 
-    var canAcceptMoves: Bool { phase.canAcceptMoves && !isResolving }
+    var canAcceptMoves: Bool { phase.canAcceptMoves && !isResolving && !inputBlocked }
     var showsFinalResult: Bool { phase.showsFinalResult }
     var hasGuaranteedClear: Bool { phase.hasGuaranteedClear }
     var canChaseStars: Bool { phase == .goalReached && movesLeft > 0 && earnedStars < 3 }
@@ -69,6 +72,14 @@ final class GameEngine: ObservableObject, GameSceneDelegate {
     }
 
     var scoreTier: Int { level.stars(for: score) }
+
+    var dailyShareResult: DailyShareResult? {
+        guard let challenge = configuration.dailyChallenge, !isResolving else { return nil }
+        return DailyShareResult(challenge: challenge,
+                                completed: hasGuaranteedClear,
+                                score: score,
+                                movesUsed: level.moves - movesLeft)
+    }
 
     var nextStarThreshold: Int? {
         StarRating.nextCampaignThreshold(score: score,
@@ -91,7 +102,7 @@ final class GameEngine: ObservableObject, GameSceneDelegate {
     func chooseStarChase() {
         let oldPhase = phase
         phase = chaseState.chooseStarChase(movesLeft: movesLeft, stars: earnedStars)
-        scene.inputEnabled = phase.canAcceptMoves
+        refreshSceneInput()
         if phase == .won && oldPhase != .won {
             publishSettledOutcome()
             playWinFeedback()
@@ -101,7 +112,7 @@ final class GameEngine: ObservableObject, GameSceneDelegate {
     func requestFinish() {
         let oldPhase = phase
         phase = chaseState.requestFinish()
-        scene.inputEnabled = phase.canAcceptMoves
+        refreshSceneInput()
         if phase == .won && oldPhase != .won {
             publishSettledOutcome()
             playWinFeedback()
@@ -121,6 +132,15 @@ final class GameEngine: ObservableObject, GameSceneDelegate {
         }
         feedbackDismissal = dismissal
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.1, execute: dismissal)
+    }
+
+    func setInputBlocked(_ blocked: Bool) {
+        inputBlocked = blocked
+        refreshSceneInput()
+    }
+
+    private func refreshSceneInput() {
+        scene.inputEnabled = phase.canAcceptMoves && !inputBlocked
     }
 
     func resetTransientState() {
@@ -153,10 +173,11 @@ final class GameEngine: ObservableObject, GameSceneDelegate {
         phase = chaseState.didSettle(objectivesSatisfied: objectivesSatisfied,
                                      movesLeft: movesLeft,
                                      stars: rating)
-        scene.inputEnabled = phase.canAcceptMoves
+        refreshSceneInput()
 
-        if phase.hasGuaranteedClear {
-            // GoalReached is saved here, before either optional player choice.
+        if phase.hasGuaranteedClear || phase == .lost {
+            // Save a guaranteed clear before either optional choice. Failed daily
+            // attempts are recorded separately and can never unlock the campaign.
             publishSettledOutcome()
         }
 
@@ -170,11 +191,12 @@ final class GameEngine: ObservableObject, GameSceneDelegate {
     func sceneRejectedSwap() {}
 
     private func publishSettledOutcome() {
-        onSettledCampaignOutcome?(
-            SettledCampaignOutcome(level: level,
-                                   score: score,
-                                   stars: level.campaignStars(for: score, objectivesCompleted: true),
-                                   completed: true)
+        onSettledOutcome?(
+            SettledOutcome(configuration: configuration,
+                           score: score,
+                           stars: earnedStars,
+                           completed: hasGuaranteedClear,
+                           movesUsed: level.moves - movesLeft)
         )
     }
 

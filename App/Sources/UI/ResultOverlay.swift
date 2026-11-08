@@ -20,7 +20,9 @@ struct ResultOverlay: View {
                     .accessibilityIdentifier("resultTitle")
 
                 if isChoice {
-                    Text("Your clear is saved. Finish now or spend the remaining moves improving it.")
+                    Text(app.saveWarning == nil
+                         ? "Your clear is saved. Finish now or spend the remaining moves improving it."
+                         : "Your clear is kept for this session. Finish now or keep improving it; device storage could not be updated.")
                         .font(.subheadline)
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.secondary)
@@ -39,7 +41,7 @@ struct ResultOverlay: View {
                 HStack(spacing: 26) {
                     scoreValue(label: "SCORE", value: engine.score, identifier: "finalScoreValue")
                     scoreValue(label: "BEST CLEARED",
-                               value: app.bestScore(for: engine.level),
+                               value: app.bestScore(for: engine.configuration),
                                identifier: "personalBestValue")
                 }
 
@@ -64,7 +66,7 @@ struct ResultOverlay: View {
     private var title: String {
         switch engine.phase {
         case .goalReached: "Goal complete!"
-        case .won: "Level Clear"
+        case .won: engine.configuration.mode == .daily ? "Daily Clear" : "Level Clear"
         case .lost: "Out of Moves"
         case .playing, .starChase: ""
         }
@@ -84,6 +86,12 @@ struct ResultOverlay: View {
                         engine.chooseStarChase()
                     }
                 }
+            } else if let result = engine.dailyShareResult {
+                DailyPuzzleResultActions(result: result,
+                                         retry: { app.start($0) },
+                                         levelSelect: { app.exitGame() },
+                                         saveWarning: app.dailyPuzzle?.warning,
+                                         showsSummary: false)
             } else {
                 if won,
                    let next = app.level(withID: engine.level.id + 1),

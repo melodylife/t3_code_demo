@@ -33,6 +33,7 @@ struct DailyPuzzleMenuCard: View {
                     catch { launchFailed = true }
                 }
                 .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("playDailyButton")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
@@ -58,23 +59,29 @@ struct DailyPuzzleResultActions: View {
     let retry: (GameConfiguration) -> Void
     let levelSelect: () -> Void
     var saveWarning: DailyStoreWarning? = nil
+    var showsSummary = true
 
     var body: some View {
         VStack(spacing: 12) {
             Text("Daily Puzzle • \(result.challenge.id.date) UTC • v\(result.challenge.id.version)")
                 .font(.subheadline)
-            Text(result.completed ? "Daily goal complete!" : "Daily goal not completed")
-            Text("Score: \(result.score) • Moves used: \(result.movesUsed)")
+            if showsSummary {
+                Text(result.completed ? "Daily goal complete!" : "Daily goal not completed")
+                Text("Score: \(result.score) • Moves used: \(result.movesUsed)")
+            }
             if saveWarning != nil {
                 Text("Result available here, but daily history may not be saved on this device.")
                     .font(.caption)
             }
             Button("Retry Daily") { retry(.daily(result.challenge)) }
                 .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("retryDailyButton")
             ShareLink(item: result.text) {
                 Label("Share Result", systemImage: "square.and.arrow.up")
             }
+            .accessibilityIdentifier("shareDailyButton")
             Button("Level Select", action: levelSelect)
+                .accessibilityIdentifier("levelSelectButton")
         }
     }
 }

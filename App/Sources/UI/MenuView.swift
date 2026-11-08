@@ -5,6 +5,7 @@ struct MenuView: View {
     @EnvironmentObject private var app: AppModel
     @AppStorage("soundEnabled") private var soundEnabled = true
     @AppStorage("hapticsEnabled") private var hapticsEnabled = true
+    @AppStorage(DailyPuzzleFeature.defaultsKey) private var dailyPuzzleEnabled = false
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 5)
 
@@ -20,6 +21,14 @@ struct MenuView: View {
                     playButton(for: nextLevel)
                 }
                 levelGrid
+                if dailyPuzzleEnabled {
+                    if let daily = app.dailyPuzzle {
+                        DailyPuzzleMenuCard(model: daily) { app.start($0) }
+                    } else {
+                        Text("Daily Puzzle unavailable. Check your device date.")
+                            .font(.caption)
+                    }
+                }
                 settings
             }
             .padding(.horizontal, 20)
@@ -93,6 +102,12 @@ struct MenuView: View {
                 Label("Haptics", systemImage: "hand.tap.fill")
                     .font(.subheadline.weight(.medium))
             }
+            Divider().overlay(Theme.cardStroke)
+            Toggle(isOn: $dailyPuzzleEnabled) {
+                Label("Daily Puzzle preview", systemImage: "calendar")
+                    .font(.subheadline.weight(.medium))
+            }
+            .accessibilityIdentifier("dailyPuzzleToggle")
         }
         .tint(Theme.accent)
         .padding(.horizontal, 16)

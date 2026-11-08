@@ -4,10 +4,12 @@ import SwiftUI
 struct GameScreen: View {
     @ObservedObject var engine: GameEngine
     @EnvironmentObject private var app: AppModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var showingDailyExit = false
 
     var body: some View {
         VStack(spacing: 10) {
-            HUDView(engine: engine)
+            HUDView(engine: engine, exit: requestExit)
             Spacer(minLength: 8)
             SpriteBoardView(scene: engine.scene)
                 .aspectRatio(1, contentMode: .fit)
@@ -15,6 +17,11 @@ struct GameScreen: View {
             Spacer(minLength: 8)
         }
         .padding(.top, 6)
+        .modifier(DailyPuzzleExitConfirmation(isPresented: $showingDailyExit,
+                                              leave: { app.exitGame() }))
+        .onChange(of: showingDailyExit) { _, shown in
+            engine.setInputBlocked(shown)
+        }
         .overlay {
             if engine.phase == .goalReached || engine.showsFinalResult {
                 ResultOverlay(engine: engine)
@@ -35,30 +42,41 @@ struct GameScreen: View {
             }
             .padding(.top, 92)
         }
-        .animation(.easeInOut(duration: 0.25), value: engine.phase)
-        .animation(.easeInOut(duration: 0.18), value: engine.clearFeedback?.id)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: engine.phase)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: engine.clearFeedback?.id)
+    }
+
+    private func requestExit() {
+        guard !engine.isResolving else { return }
+        if engine.configuration.mode == .daily && !engine.showsFinalResult {
+            engine.setInputBlocked(true)
+            showingDailyExit = true
+        } else {
+            app.exitGame()
+        }
     }
 }
 
 struct HUDView: View {
     @ObservedObject var engine: GameEngine
-    @EnvironmentObject private var app: AppModel
+    let exit: () -> Void
 
     var body: some View {
         VStack(spacing: 8) {
             HStack(spacing: 12) {
-                Button {
-                    app.exitGame()
-                } label: {
+                Button(action: exit) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 16, weight: .bold))
                         .frame(width: 40, height: 40)
                         .background(Circle().fill(Theme.card))
                 }
                 .buttonStyle(.plain)
+                .disabled(engine.isResolving)
+                .accessibilityLabel("Back to level select")
+                .accessibilityIdentifier("exitGameButton")
 
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("LEVEL \(engine.level.id)")
+                    Text(engine.configuration.mode == .daily ? "DAILY PUZZLE" : "LEVEL \(engine.level.id)")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(.secondary)
                     Text("\(engine.score)")
