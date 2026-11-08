@@ -7,29 +7,50 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		151E7A740C9DF94CFD26F218 /* HintBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 640CAEF096CECE887367ED8A /* HintBannerView.swift */; };
 		1655492599E85BF2F7C5E089 /* EmojiMatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 053F69E0215F027F43BD5E4A /* EmojiMatchApp.swift */; };
 		22396A0FED83097476856320 /* GameScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F13844CF1D3E7C77DABCB51 /* GameScene.swift */; };
+		23B0CE263D984A2AEC2C03CF /* SessionIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E07ECFC8C83C65A7B7CCD593 /* SessionIntegrationTests.swift */; };
+		32932EA692ACDC59B2FB59E1 /* GuidedPlayIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10E9774984E7725FD885DB5 /* GuidedPlayIntegrationTests.swift */; };
 		435AC7B99A9BB67A6E157A6A /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D74F4B57D2A71DAAF5A9F41 /* AppModel.swift */; };
+		46D7FBF94740C513002C4962 /* GuidedPracticeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98434832BDC521C2A6C9D70D /* GuidedPracticeView.swift */; };
 		518AEB4B475F117EFEFA6982 /* ResultOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BA003922C81205EB32E6D8D /* ResultOverlay.swift */; };
+		538E6124A7FA293A87208A3F /* LearningStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F3D99A7C04C7CA51050E80D /* LearningStore.swift */; };
 		5C9D9E5384921BFA8BCD2036 /* Timing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D0F0999722D88742B393E9B /* Timing.swift */; };
 		5FA2C8775BEC787D810D76F0 /* LevelPlaythroughUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D85700F8CA687370079B33FF /* LevelPlaythroughUITests.swift */; };
 		655D8DD55D73F1EF3A68707D /* GameEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65314C710CB785F8097C2352 /* GameEngine.swift */; };
 		6AB6A5F086DB6968D440409E /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 247E701D188EBA43FFBD04C8 /* Theme.swift */; };
 		6FB4BFA297D31206AC849FB4 /* MenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEC043015A54730C68F646DA /* MenuView.swift */; };
+		6FCF22F3E0B0B152D981BF09 /* DailyPuzzleModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ABF6985310CAA56B00F6480 /* DailyPuzzleModel.swift */; };
+		71A98EE499069D6D643527B4 /* SpecialIntro.swift in Sources */ = {isa = PBXBuildFile; fileRef = D920978AC741E0E0A9D475AC /* SpecialIntro.swift */; };
+		7362FC47D2B8E39A5D381B1E /* GuidedPracticeCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7091B1144073CF6D7AB1AE24 /* GuidedPracticeCoordinator.swift */; };
 		852D8C200CFD85AF254C554F /* levels.json in Resources */ = {isa = PBXBuildFile; fileRef = 12F13DC2EBB9BDBFEA9D8A84 /* levels.json */; };
 		89D2483AA1E6F64589D830A6 /* GameScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = E191CBF8D95CAD22A698A27A /* GameScreen.swift */; };
 		93BF2C0294BA32ACBE390D63 /* TileNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C8CA5C717CCD25A043C0844 /* TileNode.swift */; };
+		A020CDEE9185D3834D993E20 /* GameExperienceUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F968CFBCE214D2A96154B82 /* GameExperienceUITests.swift */; };
 		A6F7D2C36D95F87FDBAD13E0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AC5E2FD2C3DA43F031336940 /* Assets.xcassets */; };
 		B3DA49F9CB475AE46C51F98A /* SpriteBoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12E0D20AA6EEC6D4D67FF17 /* SpriteBoardView.swift */; };
+		B9AC400EBED570EB52D1A568 /* GuidedPlayCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0092424CAC4C493099B8D39 /* GuidedPlayCoordinator.swift */; };
+		C16401C446A58DCCEDDE9B18 /* Match3Core in Frameworks */ = {isa = PBXBuildFile; productRef = 9DC3FF57CFFFAA59B437BDF5 /* Match3Core */; };
 		DD4D12638E80062E7FE15B44 /* BoardLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D4734EACA67CE84240AEBC4 /* BoardLayout.swift */; };
 		E51FCCDCA98022D9AA2A2395 /* SoundPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1124588FAE6F91E8DB86A0C7 /* SoundPlayer.swift */; };
+		E6B77E1FF1802CFEE2486583 /* DailyPuzzleViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B8D06E17B4B84796F6A878 /* DailyPuzzleViews.swift */; };
 		E8C5D2DE42C6B13BD361D4D2 /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6581C607A196CDC85BF9B71E /* Haptics.swift */; };
 		E9DEE4F9FF7B5526B31A3449 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FE4CB6F3A969F6BCD0999FE /* RootView.swift */; };
 		E9EF8CAC64D054E62191BC6D /* EmojiAtlas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B01EC5D9E2DD5E4FBA9CBBF /* EmojiAtlas.swift */; };
 		F89D48856F2EF56A4D5BC320 /* Match3Core in Frameworks */ = {isa = PBXBuildFile; productRef = 3E6BCB3DE14969CE6E2405E4 /* Match3Core */; };
+		F92899F2D107A15CB6CFB9C3 /* LevelIntroOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D00093BB07E10984632E463 /* LevelIntroOverlay.swift */; };
+		FD536FA38BC6B7B02441A6EF /* HowToPlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB8D49855DE9BC9C9CC46D4 /* HowToPlayView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		543BD0AB9F304D500AD03CD1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 336CB8B799E544B772764563 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 565CB272CF49B2DAD86BE169;
+			remoteInfo = EmojiMatch;
+		};
 		89E29C0C99042EF0DBD0A114 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 336CB8B799E544B772764563 /* Project object */;
@@ -42,29 +63,51 @@
 /* Begin PBXFileReference section */
 		053F69E0215F027F43BD5E4A /* EmojiMatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiMatchApp.swift; sourceTree = "<group>"; };
 		0D4734EACA67CE84240AEBC4 /* BoardLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardLayout.swift; sourceTree = "<group>"; };
+		0F3D99A7C04C7CA51050E80D /* LearningStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningStore.swift; sourceTree = "<group>"; };
 		1124588FAE6F91E8DB86A0C7 /* SoundPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundPlayer.swift; sourceTree = "<group>"; };
 		12F13DC2EBB9BDBFEA9D8A84 /* levels.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = levels.json; sourceTree = "<group>"; };
 		139217F93A96DD9132CD194B /* Match3Core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Match3Core; path = Packages/Match3Core; sourceTree = SOURCE_ROOT; };
+		1F968CFBCE214D2A96154B82 /* GameExperienceUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameExperienceUITests.swift; sourceTree = "<group>"; };
 		1FE4CB6F3A969F6BCD0999FE /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		247E701D188EBA43FFBD04C8 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		2D74F4B57D2A71DAAF5A9F41 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		2F13844CF1D3E7C77DABCB51 /* GameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameScene.swift; sourceTree = "<group>"; };
+		39B8D06E17B4B84796F6A878 /* DailyPuzzleViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyPuzzleViews.swift; sourceTree = "<group>"; };
+		3D00093BB07E10984632E463 /* LevelIntroOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelIntroOverlay.swift; sourceTree = "<group>"; };
+		5ABF6985310CAA56B00F6480 /* DailyPuzzleModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyPuzzleModel.swift; sourceTree = "<group>"; };
+		640CAEF096CECE887367ED8A /* HintBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HintBannerView.swift; sourceTree = "<group>"; };
 		65314C710CB785F8097C2352 /* GameEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameEngine.swift; sourceTree = "<group>"; };
 		6581C607A196CDC85BF9B71E /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
 		6C8CA5C717CCD25A043C0844 /* TileNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TileNode.swift; sourceTree = "<group>"; };
+		7091B1144073CF6D7AB1AE24 /* GuidedPracticeCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidedPracticeCoordinator.swift; sourceTree = "<group>"; };
 		7B01EC5D9E2DD5E4FBA9CBBF /* EmojiAtlas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiAtlas.swift; sourceTree = "<group>"; };
 		7BA003922C81205EB32E6D8D /* ResultOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultOverlay.swift; sourceTree = "<group>"; };
 		8D0F0999722D88742B393E9B /* Timing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Timing.swift; sourceTree = "<group>"; };
+		98434832BDC521C2A6C9D70D /* GuidedPracticeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidedPracticeView.swift; sourceTree = "<group>"; };
 		9D0B251D1F72EE1CF4287336 /* EmojiMatch.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = EmojiMatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A0092424CAC4C493099B8D39 /* GuidedPlayCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidedPlayCoordinator.swift; sourceTree = "<group>"; };
 		AC5E2FD2C3DA43F031336940 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B12E0D20AA6EEC6D4D67FF17 /* SpriteBoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpriteBoardView.swift; sourceTree = "<group>"; };
 		B722E2F90FEC1941429E3A0B /* EmojiMatchUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = EmojiMatchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		BEC043015A54730C68F646DA /* MenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuView.swift; sourceTree = "<group>"; };
+		C2E25C5CBE74578922E69CAE /* EmojiMatchTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = EmojiMatchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CBB8D49855DE9BC9C9CC46D4 /* HowToPlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowToPlayView.swift; sourceTree = "<group>"; };
 		D85700F8CA687370079B33FF /* LevelPlaythroughUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelPlaythroughUITests.swift; sourceTree = "<group>"; };
+		D920978AC741E0E0A9D475AC /* SpecialIntro.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialIntro.swift; sourceTree = "<group>"; };
+		E07ECFC8C83C65A7B7CCD593 /* SessionIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionIntegrationTests.swift; sourceTree = "<group>"; };
 		E191CBF8D95CAD22A698A27A /* GameScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameScreen.swift; sourceTree = "<group>"; };
+		F10E9774984E7725FD885DB5 /* GuidedPlayIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidedPlayIntegrationTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		33FD7CA7C91FB57193DE8FA9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C16401C446A58DCCEDDE9B18 /* Match3Core in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		7032666B62B3C2F0994C9355 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -76,6 +119,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		1A30F3E5A67298F8C0ECFBE7 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				F10E9774984E7725FD885DB5 /* GuidedPlayIntegrationTests.swift */,
+				E07ECFC8C83C65A7B7CCD593 /* SessionIntegrationTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
 		1AE9F1E52682AF66E4C6773E = {
 			isa = PBXGroup;
 			children = (
@@ -96,6 +148,7 @@
 		229589202B544E2BDF0A9FF8 /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				39B8D06E17B4B84796F6A878 /* DailyPuzzleViews.swift */,
 				053F69E0215F027F43BD5E4A /* EmojiMatchApp.swift */,
 				E191CBF8D95CAD22A698A27A /* GameScreen.swift */,
 				BEC043015A54730C68F646DA /* MenuView.swift */,
@@ -124,6 +177,7 @@
 			isa = PBXGroup;
 			children = (
 				9D0B251D1F72EE1CF4287336 /* EmojiMatch.app */,
+				C2E25C5CBE74578922E69CAE /* EmojiMatchTests.xctest */,
 				B722E2F90FEC1941429E3A0B /* EmojiMatchUITests.xctest */,
 			);
 			name = Products;
@@ -133,6 +187,7 @@
 			isa = PBXGroup;
 			children = (
 				272B5FE7DF8037B854E2A64F /* Game */,
+				F8551D1C70E6F5CC59A739DC /* GuidedPlay */,
 				EA557647CACA2663658DF725 /* State */,
 				C03DB38782926F85F3621DEE /* Support */,
 				229589202B544E2BDF0A9FF8 /* UI */,
@@ -154,6 +209,7 @@
 			children = (
 				FF9EB31827B2E768A694DCD5 /* Resources */,
 				BB4D1F089FD4A3A5DD78B13C /* Sources */,
+				1A30F3E5A67298F8C0ECFBE7 /* Tests */,
 				E870A954D01DA0796C3EC8D2 /* UITests */,
 			);
 			path = App;
@@ -162,6 +218,7 @@
 		E870A954D01DA0796C3EC8D2 /* UITests */ = {
 			isa = PBXGroup;
 			children = (
+				1F968CFBCE214D2A96154B82 /* GameExperienceUITests.swift */,
 				D85700F8CA687370079B33FF /* LevelPlaythroughUITests.swift */,
 			);
 			path = UITests;
@@ -171,8 +228,24 @@
 			isa = PBXGroup;
 			children = (
 				2D74F4B57D2A71DAAF5A9F41 /* AppModel.swift */,
+				5ABF6985310CAA56B00F6480 /* DailyPuzzleModel.swift */,
 			);
 			path = State;
+			sourceTree = "<group>";
+		};
+		F8551D1C70E6F5CC59A739DC /* GuidedPlay */ = {
+			isa = PBXGroup;
+			children = (
+				A0092424CAC4C493099B8D39 /* GuidedPlayCoordinator.swift */,
+				7091B1144073CF6D7AB1AE24 /* GuidedPracticeCoordinator.swift */,
+				98434832BDC521C2A6C9D70D /* GuidedPracticeView.swift */,
+				640CAEF096CECE887367ED8A /* HintBannerView.swift */,
+				CBB8D49855DE9BC9C9CC46D4 /* HowToPlayView.swift */,
+				0F3D99A7C04C7CA51050E80D /* LearningStore.swift */,
+				3D00093BB07E10984632E463 /* LevelIntroOverlay.swift */,
+				D920978AC741E0E0A9D475AC /* SpecialIntro.swift */,
+			);
+			path = GuidedPlay;
 			sourceTree = "<group>";
 		};
 		FF9EB31827B2E768A694DCD5 /* Resources */ = {
@@ -206,6 +279,26 @@
 			productName = EmojiMatch;
 			productReference = 9D0B251D1F72EE1CF4287336 /* EmojiMatch.app */;
 			productType = "com.apple.product-type.application";
+		};
+		5DA6C5C5E5774096640AAAEB /* EmojiMatchTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A62CB3BF8D78EEF5E185BA9D /* Build configuration list for PBXNativeTarget "EmojiMatchTests" */;
+			buildPhases = (
+				5FA5BA48B631AD356B4627D2 /* Sources */,
+				33FD7CA7C91FB57193DE8FA9 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6D5A1E38D6ADCF54476E8F2C /* PBXTargetDependency */,
+			);
+			name = EmojiMatchTests;
+			packageProductDependencies = (
+				9DC3FF57CFFFAA59B437BDF5 /* Match3Core */,
+			);
+			productName = EmojiMatchTests;
+			productReference = C2E25C5CBE74578922E69CAE /* EmojiMatchTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		7A8C95D32FDB87F50C220A8D /* EmojiMatchUITests */ = {
 			isa = PBXNativeTarget;
@@ -257,6 +350,7 @@
 			projectRoot = "";
 			targets = (
 				565CB272CF49B2DAD86BE169 /* EmojiMatch */,
+				5DA6C5C5E5774096640AAAEB /* EmojiMatchTests */,
 				7A8C95D32FDB87F50C220A8D /* EmojiMatchUITests */,
 			);
 		};
@@ -275,10 +369,20 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		5FA5BA48B631AD356B4627D2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				32932EA692ACDC59B2FB59E1 /* GuidedPlayIntegrationTests.swift in Sources */,
+				23B0CE263D984A2AEC2C03CF /* SessionIntegrationTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		92B1C939B6C5DA28D5DA353A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A020CDEE9185D3834D993E20 /* GameExperienceUITests.swift in Sources */,
 				5FA2C8775BEC787D810D76F0 /* LevelPlaythroughUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -289,16 +393,26 @@
 			files = (
 				435AC7B99A9BB67A6E157A6A /* AppModel.swift in Sources */,
 				DD4D12638E80062E7FE15B44 /* BoardLayout.swift in Sources */,
+				6FCF22F3E0B0B152D981BF09 /* DailyPuzzleModel.swift in Sources */,
+				E6B77E1FF1802CFEE2486583 /* DailyPuzzleViews.swift in Sources */,
 				E9EF8CAC64D054E62191BC6D /* EmojiAtlas.swift in Sources */,
 				1655492599E85BF2F7C5E089 /* EmojiMatchApp.swift in Sources */,
 				655D8DD55D73F1EF3A68707D /* GameEngine.swift in Sources */,
 				22396A0FED83097476856320 /* GameScene.swift in Sources */,
 				89D2483AA1E6F64589D830A6 /* GameScreen.swift in Sources */,
+				B9AC400EBED570EB52D1A568 /* GuidedPlayCoordinator.swift in Sources */,
+				7362FC47D2B8E39A5D381B1E /* GuidedPracticeCoordinator.swift in Sources */,
+				46D7FBF94740C513002C4962 /* GuidedPracticeView.swift in Sources */,
 				E8C5D2DE42C6B13BD361D4D2 /* Haptics.swift in Sources */,
+				151E7A740C9DF94CFD26F218 /* HintBannerView.swift in Sources */,
+				FD536FA38BC6B7B02441A6EF /* HowToPlayView.swift in Sources */,
+				538E6124A7FA293A87208A3F /* LearningStore.swift in Sources */,
+				F92899F2D107A15CB6CFB9C3 /* LevelIntroOverlay.swift in Sources */,
 				6FB4BFA297D31206AC849FB4 /* MenuView.swift in Sources */,
 				518AEB4B475F117EFEFA6982 /* ResultOverlay.swift in Sources */,
 				E9DEE4F9FF7B5526B31A3449 /* RootView.swift in Sources */,
 				E51FCCDCA98022D9AA2A2395 /* SoundPlayer.swift in Sources */,
+				71A98EE499069D6D643527B4 /* SpecialIntro.swift in Sources */,
 				B3DA49F9CB475AE46C51F98A /* SpriteBoardView.swift in Sources */,
 				6AB6A5F086DB6968D440409E /* Theme.swift in Sources */,
 				93BF2C0294BA32ACBE390D63 /* TileNode.swift in Sources */,
@@ -309,6 +423,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		6D5A1E38D6ADCF54476E8F2C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 565CB272CF49B2DAD86BE169 /* EmojiMatch */;
+			targetProxy = 543BD0AB9F304D500AD03CD1 /* PBXContainerItemProxy */;
+		};
 		A49536BE87193C6044E7EE87 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 565CB272CF49B2DAD86BE169 /* EmojiMatch */;
@@ -371,6 +490,24 @@
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
+		};
+		5B39BBB36EE75BDF5CFF8CC9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.sunchang.emojimatch.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/EmojiMatch.app/EmojiMatch";
+			};
+			name = Debug;
 		};
 		7AEABD8DF5420934A17D4D5F /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -456,6 +593,24 @@
 			};
 			name = Debug;
 		};
+		D554B98737AFC0EAD4DAB6E7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.sunchang.emojimatch.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/EmojiMatch.app/EmojiMatch";
+			};
+			name = Release;
+		};
 		F2CAE490DFC52C141CA83BB6 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -535,6 +690,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		A62CB3BF8D78EEF5E185BA9D /* Build configuration list for PBXNativeTarget "EmojiMatchTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5B39BBB36EE75BDF5CFF8CC9 /* Debug */,
+				D554B98737AFC0EAD4DAB6E7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		D092D8E27F9B37496EDA2A78 /* Build configuration list for PBXNativeTarget "EmojiMatchUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -555,6 +719,10 @@
 
 /* Begin XCSwiftPackageProductDependency section */
 		3E6BCB3DE14969CE6E2405E4 /* Match3Core */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Match3Core;
+		};
+		9DC3FF57CFFFAA59B437BDF5 /* Match3Core */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Match3Core;
 		};

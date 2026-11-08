@@ -67,6 +67,32 @@ public struct Resolution: Sendable {
     }
 }
 
+public struct InitialClearEvaluation: Sendable, Equatable {
+    public let clearedCells: Set<Cell>
+    public let clearedKinds: [TileKind: Int]
+    public let spawnedSpecials: [TileSpawn]
+    public let activatesExistingSpecial: Bool
+    public let detonations: Int
+    public let groups: [MatchGroup]
+    public let points: Int
+
+    public init(clearedCells: Set<Cell>,
+                clearedKinds: [TileKind: Int],
+                spawnedSpecials: [TileSpawn],
+                activatesExistingSpecial: Bool,
+                detonations: Int,
+                groups: [MatchGroup],
+                points: Int) {
+        self.clearedCells = clearedCells
+        self.clearedKinds = clearedKinds
+        self.spawnedSpecials = spawnedSpecials
+        self.activatesExistingSpecial = activatesExistingSpecial
+        self.detonations = detonations
+        self.groups = groups
+        self.points = points
+    }
+}
+
 public enum Resolver {
     public static let maxCascadeSteps = 50
 
@@ -103,7 +129,91 @@ public enum Resolver {
         return nil
     }
 
-    // MARK: - Resolution
+    // MARK: - Initial clear evaluation
+
+    /// Evaluates the first clear step of a swap without consuming RNG or advancing refills.
+    public static func evaluateInitialClear(_ board: Board, _ a: Cell, _ b: Cell) -> InitialClearEvaluation? {
+        guard board.contains(a), board.contains(b), a.isAdjacent(to: b),
+              let tileA = board[a], let tileB = board[b] else { return nil }
+
+        var work = board
+        work.swap(a, b)
+
+        var seeds: Set<Cell> = []
+        var preResolved: Set<Cell> = []
+        var activatesExistingSpecial = false
+
+        if tileA.isRainbow || tileB.isRainbow {
+            activatesExistingSpecial = true
+            if tileA.isRainbow && tileB.isRainbow {
+                seeds = Set(work.cells)
+                preResolved = [a, b]
+            } else {
+                let rainbowCell = tileA.isRainbow ? b : a
+                let partnerCell = tileA.isRainbow ? a : b
+                if let kind = work[partnerCell]?.kind {
+                    seeds = Set(work.cells.filter { work[$0]?.kind == kind })
+                }
+                seeds.insert(partnerCell)
+                seeds.insert(rainbowCell)
+                preResolved = [rainbowCell]
+            }
+        } else if tileA.isSpecial && tileB.isSpecial {
+            activatesExistingSpecial = true
+            seeds = [a, b]
+        }
+
+        let groups = MatchDetector.groups(in: work)
+        if seeds.isEmpty && groups.isEmpty { return nil }
+
+        if !activatesExistingSpecial {
+            for group in groups {
+                for cell in group.cells {
+                    let preSwapCell: Cell
+                    if cell == a { preSwapCell = b }
+                    else if cell == b { preSwapCell = a }
+                    else { preSwapCell = cell }
+                    if let originalTile = board[preSwapCell], originalTile.isSpecial {
+                        activatesExistingSpecial = true
+                        break
+                    }
+                }
+                if activatesExistingSpecial { break }
+            }
+        }
+
+        var clearCells = seeds
+        var spawned: [TileSpawn] = []
+        for group in groups {
+            clearCells.formUnion(group.cells)
+            if let special = Rules.special(for: group) {
+                let cell = spawnCell(for: group, swapCells: [a, b])
+                spawned.append(TileSpawn(cell: cell, tile: special))
+            }
+        }
+
+        let expansion = expand(cells: clearCells, in: work, alreadyResolved: preResolved)
+        let clearedKindsThisStep = expansion.cells.compactMap { work[$0]?.kind }
+        var clearedKinds: [TileKind: Int] = [:]
+        for kind in clearedKindsThisStep { clearedKinds[kind, default: 0] += 1 }
+
+        if expansion.detonations > 0 {
+            activatesExistingSpecial = true
+        }
+
+        let points = Rules.points(clearedCount: expansion.cells.count,
+                                  groups: groups,
+                                  detonations: expansion.detonations,
+                                  multiplier: Rules.multiplier(cascadeIndex: 0))
+
+        return InitialClearEvaluation(clearedCells: expansion.cells,
+                                      clearedKinds: clearedKinds,
+                                      spawnedSpecials: spawned,
+                                      activatesExistingSpecial: activatesExistingSpecial,
+                                      detonations: expansion.detonations,
+                                      groups: groups,
+                                      points: points)
+    }
 
     public static func resolveSwap(_ board: Board,
                                    _ a: Cell,

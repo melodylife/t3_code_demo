@@ -50,6 +50,14 @@ public struct Level: Codable, Sendable, Equatable, Identifiable {
     public var paletteCount: Int { palette.count }
 
     public func stars(for score: Int) -> Int {
-        starThresholds.filter { score >= $0 }.count
+        StarRating.scoreTier(score: score, thresholds: starThresholds)
+    }
+
+    /// Stars shown for a campaign result. A completed campaign level always
+    /// earns at least one star; an incomplete attempt never earns stars.
+    public func campaignStars(for score: Int, objectivesCompleted: Bool) -> Int {
+        StarRating.campaign(score: score,
+                            thresholds: starThresholds,
+                            objectivesCompleted: objectivesCompleted)
     }
 }

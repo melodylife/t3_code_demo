@@ -16,6 +16,8 @@ final class LevelPlaythroughUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
+        app.launchArguments = ["-emojimatch.learning.tips_seen_v1", "YES",
+                               "-emojimatch.learning.tutorial_completed_v1", "YES"]
         app.launch()
     }
 
@@ -34,9 +36,14 @@ final class LevelPlaythroughUITests: XCTestCase {
 
         var cursor = 0
         var acceptedSwaps = 0
+        var attempts = 0
         let pairs = neighbourPairs()
 
-        while !result.exists && acceptedSwaps < 26 {
+        while !result.exists && acceptedSwaps < 26 && attempts < 512 {
+            for _ in 0..<3 where app.buttons["dismissSpecialIntro"].exists {
+                app.buttons["dismissSpecialIntro"].tap()
+            }
+            attempts += 1
             let pair = pairs[cursor % pairs.count]
             let movesBefore = moves.label
 
@@ -58,6 +65,11 @@ final class LevelPlaythroughUITests: XCTestCase {
 
         XCTAssertTrue(result.waitForExistence(timeout: 15),
                       "no result overlay after \(acceptedSwaps) accepted swaps")
+        if app.buttons["finishGoalButton"].exists {
+            app.buttons["finishGoalButton"].tap()
+        }
+        let finalized = expectation(for: NSPredicate(format: "label == %@", "Level Clear"), evaluatedWith: result)
+        wait(for: [finalized], timeout: 10)
         // The overlay is a full-screen cover, so the HUD drops out of the accessibility
         // tree while it is up; read the score from the overlay itself.
         let finalScoreText = app.staticTexts["finalScoreValue"]

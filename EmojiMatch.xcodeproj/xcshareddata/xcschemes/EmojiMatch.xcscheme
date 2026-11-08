@@ -44,6 +44,17 @@
             parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "5DA6C5C5E5774096640AAAEB"
+               BuildableName = "EmojiMatchTests.xctest"
+               BlueprintName = "EmojiMatchTests"
+               ReferencedContainer = "container:EmojiMatch.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "7A8C95D32FDB87F50C220A8D"
                BuildableName = "EmojiMatchUITests.xctest"
                BlueprintName = "EmojiMatchUITests"

@@ -42,6 +42,22 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         SUPPORTS_MACCATALYST: NO
 
+  EmojiMatchTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: App/Tests
+    dependencies:
+      - target: EmojiMatch
+      - package: Match3Core
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.sunchang.emojimatch.tests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGNING_ALLOWED: NO
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/EmojiMatch.app/EmojiMatch"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
   EmojiMatchUITests:
     type: bundle.ui-testing
     platform: iOS
@@ -66,4 +82,5 @@ schemes:
     test:
       config: Debug
       targets:
+        - EmojiMatchTests
         - EmojiMatchUITests

@@ -5,11 +5,13 @@ struct MenuView: View {
     @EnvironmentObject private var app: AppModel
     @AppStorage("soundEnabled") private var soundEnabled = true
     @AppStorage("hapticsEnabled") private var hapticsEnabled = true
+    @AppStorage(DailyPuzzleFeature.defaultsKey) private var dailyPuzzleEnabled = false
+    @State private var showsHowToPlay = false
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 5)
 
     private var nextLevel: Level? {
-        app.levels.first { app.isUnlocked($0) && app.stars(for: $0) == 0 } ?? app.levels.last
+        app.nextCampaignLevel ?? app.levels.last
     }
 
     var body: some View {
@@ -20,11 +22,26 @@ struct MenuView: View {
                     playButton(for: nextLevel)
                 }
                 levelGrid
+                if dailyPuzzleEnabled {
+                    if let daily = app.dailyPuzzle {
+                        DailyPuzzleMenuCard(model: daily) { app.start($0) }
+                    } else {
+                        Text("Daily Puzzle unavailable. Check your device date.")
+                            .font(.caption)
+                    }
+                }
+                Button { showsHowToPlay = true } label: {
+                    Label("How to Play", systemImage: "questionmark.circle.fill")
+                        .font(.headline)
+                }
+                .buttonStyle(.bordered)
+                .accessibilityIdentifier("menuHelpButton")
                 settings
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 28)
         }
+        .sheet(isPresented: $showsHowToPlay) { HowToPlayView() }
     }
 
     private var header: some View {
@@ -51,7 +68,7 @@ struct MenuView: View {
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: "play.fill")
-                Text(app.stars(for: level) == 0 ? "Play Level \(level.id)" : "Replay Level \(level.id)")
+                Text(app.isCompleted(level) ? "Replay Level \(level.id)" : "Play Level \(level.id)")
                     .font(.system(size: 19, weight: .bold, design: .rounded))
             }
             .frame(maxWidth: .infinity)
@@ -93,6 +110,12 @@ struct MenuView: View {
                 Label("Haptics", systemImage: "hand.tap.fill")
                     .font(.subheadline.weight(.medium))
             }
+            Divider().overlay(Theme.cardStroke)
+            Toggle(isOn: $dailyPuzzleEnabled) {
+                Label("Daily Puzzle preview", systemImage: "calendar")
+                    .font(.subheadline.weight(.medium))
+            }
+            .accessibilityIdentifier("dailyPuzzleToggle")
         }
         .tint(Theme.accent)
         .padding(.horizontal, 16)
@@ -130,6 +153,14 @@ private struct LevelTile: View {
                         Image(systemName: index < stars ? "star.fill" : "star")
                             .font(.system(size: 7))
                             .foregroundStyle(index < stars ? Theme.accentSecondary : Color.secondary.opacity(0.5))
+                    }
+                }
+                .overlay(alignment: .trailing) {
+                    if app.isCompleted(level) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundStyle(Theme.accentSecondary)
+                            .offset(x: 10)
                     }
                 }
             }

@@ -26,11 +26,46 @@ final class GameScene: SKScene {
     weak var gameDelegate: GameSceneDelegate?
 
     var inputEnabled = true {
-        didSet { if !inputEnabled { clearSelection() } }
+        didSet { if !inputEnabled { clearInstructionState() } }
     }
 
-    private let level: Level
-    private var board: Board
+    /// Input gating for instructional overlays, tutorials, and modal dialogs.
+    var isInputGated = false {
+        didSet {
+            if isInputGated { clearInstructionState() }
+        }
+    }
+
+    /// Settled board status: true when no cascades are actively playing.
+    var isSettled: Bool { playback == nil && rejectionRemaining <= 0 }
+
+    /// Settled board callback, triggered after every cascade playback completes.
+    var onBoardSettled: ((Board) -> Void)?
+
+    /// Integration seam for parent Feature 2 feedback: emitted from the actual .clear step.
+    var onClearFeedback: ((_ points: Int, _ multiplier: Double, _ spawnedSpecial: Bool) -> Void)?
+    var hintObjectiveKinds: (() -> Set<TileKind>)?
+
+    /// Notification for queued special introductions.
+    var onSpecialSpawned: ((Tile) -> Void)?
+
+    /// Published active hint suggestion for UI layers.
+    private(set) var activeHint: HintSuggestion? {
+        didSet {
+            onHintChanged?(activeHint)
+        }
+    }
+    var onHintChanged: ((HintSuggestion?) -> Void)?
+
+    /// Testing hook or environment override for Reduce Motion.
+    var reduceMotionOverride: Bool?
+
+    private var isReduceMotionEnabled: Bool {
+        reduceMotionOverride ?? UIAccessibility.isReduceMotionEnabled
+    }
+
+    let level: Level
+    private(set) var board: Board
     private var rng: SplitMix64
 
     private let atlas = EmojiAtlas()
@@ -38,17 +73,19 @@ final class GameScene: SKScene {
     private var layout: BoardLayout?
     private var backdrop: SKShapeNode?
 
-    private var selectedCell: Cell?
+    private(set) var selectedCell: Cell?
     private var selectionBox: SKShapeNode?
     private var dragOrigin: Cell?
     private var dragStartPoint: CGPoint = .zero
     private var dragHandled = false
 
     private var playback: Playback?
-    private var isAnimating: Bool { playback != nil }
+    private var rejectionRemaining: TimeInterval = 0
+    private var isAnimating: Bool { !isSettled }
     private var lastUpdateTime: TimeInterval?
     private var idleSeconds: TimeInterval = 0
     private var hintedPair: (Cell, Cell)?
+    private var hintNodes: [SKNode] = []
 
     init(level: Level, board: Board, rng: SplitMix64) {
         self.level = level
@@ -114,7 +151,7 @@ final class GameScene: SKScene {
 
     // MARK: - Node construction
 
-    private func symbol(for tile: Tile) -> String {
+    func symbol(for tile: Tile) -> String {
         switch tile {
         case let .normal(kind), let .rocket(kind, _), let .bomb(kind):
             return level.palette[safe: kind.index] ?? "❓"
@@ -158,7 +195,7 @@ final class GameScene: SKScene {
     // MARK: - Input
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard inputEnabled, !isAnimating, let touch = touches.first, let layout else { return }
+        guard inputEnabled, !isInputGated, !isAnimating, let touch = touches.first, let layout else { return }
         let point = touch.location(in: self)
         guard let cell = layout.cell(at: point), board[cell] != nil else { return }
 
@@ -183,7 +220,7 @@ final class GameScene: SKScene {
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard inputEnabled, !isAnimating, !dragHandled,
+        guard inputEnabled, !isInputGated, !isAnimating, !dragHandled,
               let origin = dragOrigin, let touch = touches.first, let layout else { return }
         let point = touch.location(in: self)
         let dx = point.x - dragStartPoint.x
@@ -210,21 +247,24 @@ final class GameScene: SKScene {
         dragHandled = false
     }
 
-    // MARK: - Swap
+    // MARK: - Swap Execution
 
-    private func commitSwap(from a: Cell, to b: Cell) {
-        guard inputEnabled, !isAnimating else { return }
+    @discardableResult
+    func commitSwap(from a: Cell, to b: Cell) -> Bool {
+        guard inputEnabled, !isInputGated, !isAnimating else { return false }
         clearSelection()
+        clearHint()
 
         let resolution = Resolver.resolveSwap(board, a, b,
                                              paletteCount: level.paletteCount,
                                              rng: &rng)
         guard resolution.wasAccepted else {
+            rejectionRemaining = Timing.rejectOut + Timing.rejectBack + Timing.fallPad
             animateRejectedSwap(a, b)
             Haptics.reject()
             SoundPlayer.shared.play(.error)
             gameDelegate?.sceneRejectedSwap()
-            return
+            return false
         }
 
         gameDelegate?.sceneDidConsumeMove()
@@ -232,8 +272,12 @@ final class GameScene: SKScene {
         start(resolution.steps, completion: { [weak self] in
             guard let self else { return }
             self.verifyNodeTable(expected: resolution.finalBoard)
+            // Resolve the session phase first so a queued tip cannot cover a
+            // goal-choice or final result produced by this very cascade.
             self.gameDelegate?.sceneDidSettle(board: resolution.finalBoard)
+            self.onBoardSettled?(resolution.finalBoard)
         })
+        return true
     }
 
     /// Debug invariant: after a cascade settles the sprite table must mirror the model
@@ -263,9 +307,13 @@ final class GameScene: SKScene {
     override func update(_ currentTime: TimeInterval) {
         let delta = lastUpdateTime.map { min(0.1, max(0, currentTime - $0)) } ?? 0
         lastUpdateTime = currentTime
+        if rejectionRemaining > 0 {
+            rejectionRemaining = max(0, rejectionRemaining - delta)
+            return
+        }
 
         guard var active = playback else {
-            if inputEnabled {
+            if inputEnabled && !isInputGated {
                 idleSeconds += delta
                 if idleSeconds > Timing.hintDelay { showHintIfNeeded() }
             }
@@ -305,10 +353,10 @@ final class GameScene: SKScene {
             }
             return Timing.swap
 
-        case let .clear(cells, spawned, points, _):
+        case let .clear(cells, spawned, points, multiplier):
             let kinds = cells.compactMap { board[$0]?.kind }
             step.apply(to: &board)
-            return applyClear(cells: cells, spawned: spawned, points: points, kinds: kinds)
+            return applyClear(cells: cells, spawned: spawned, points: points, kinds: kinds, multiplier: multiplier)
 
         case let .gravity(moves):
             step.apply(to: &board)
@@ -348,7 +396,11 @@ final class GameScene: SKScene {
                              .move(to: posB, duration: Timing.rejectBack)]))
     }
 
-    private func applyClear(cells: [Cell], spawned: [TileSpawn], points: Int, kinds: [TileKind]) -> TimeInterval {
+    private func applyClear(cells: [Cell],
+                            spawned: [TileSpawn],
+                            points: Int,
+                            kinds: [TileKind],
+                            multiplier: Double = 1.0) -> TimeInterval {
         let pivot = cells.first ?? Cell(row: 0, col: 0)
         var maxDelay: TimeInterval = 0
 
@@ -376,8 +428,17 @@ final class GameScene: SKScene {
                 .group([.scale(to: 1.0, duration: Timing.specialPop),
                         .fadeIn(withDuration: Timing.specialPop)])
             ]))
+
+            // Notify listeners about newly spawned specials
+            if spawn.tile.isSpecial {
+                onSpecialSpawned?(spawn.tile)
+            }
         }
 
+        // Feature 2 parent feedback hook
+        onClearFeedback?(points, multiplier, !spawned.isEmpty)
+
+        // Existing delegate signature maintained 100% compatible
         gameDelegate?.sceneDidClear(points: points, kinds: kinds, spawnedSpecial: !spawned.isEmpty)
         if Haptics.isEnabled { Haptics.tap() }
         SoundPlayer.shared.play(spawned.isEmpty ? .match : .special)
@@ -450,9 +511,9 @@ final class GameScene: SKScene {
         return Timing.shuffle
     }
 
-    // MARK: - Selection and hints
+    // MARK: - Selection and Interaction
 
-    private func select(_ cell: Cell) {
+    func select(_ cell: Cell) {
         clearSelection()
         guard let layout, let node = nodes[cell] else { return }
         selectedCell = cell
@@ -468,33 +529,254 @@ final class GameScene: SKScene {
         node.zPosition = 12
     }
 
-    private func clearSelection() {
+    func clearSelection() {
         selectionBox?.removeFromParent()
         selectionBox = nil
         if let cell = selectedCell, let node = nodes[cell] { node.zPosition = 10 }
         selectedCell = nil
     }
 
+    /// Clears any transient instructional state: selection, hint, and drag.
+    func clearInstructionState() {
+        clearSelection()
+        clearHint()
+        dragOrigin = nil
+        dragHandled = false
+    }
+
+    // MARK: - Hint System
+
+    /// Safe public method to request an objective-aware hint.
+    @discardableResult
+    func requestHint(unmetCollectionKinds: Set<TileKind> = []) -> HintSuggestion? {
+        guard inputEnabled, !isInputGated, isSettled else { return nil }
+        clearHint()
+        guard let suggestion = HintAdvisor.suggest(board: board, unmetCollectionKinds: unmetCollectionKinds) else {
+            return nil
+        }
+        displayHint(suggestion, isIdle: false)
+        return suggestion
+    }
+
+    /// Safe public method to request a hint using level objectives and tracker.
+    @discardableResult
+    func requestHint(objectives: [Objective], tracker: ObjectiveTracker) -> HintSuggestion? {
+        guard inputEnabled, !isInputGated, isSettled else { return nil }
+        clearHint()
+        guard let suggestion = HintAdvisor.suggest(board: board, objectives: objectives, tracker: tracker) else {
+            return nil
+        }
+        displayHint(suggestion, isIdle: false)
+        return suggestion
+    }
+
+    /// A deterministic teaching pair, without ranking a different legal move.
+    @discardableResult
+    func showTeachingHint(from source: Cell, to destination: Cell) -> HintSuggestion? {
+        guard inputEnabled, !isInputGated, isSettled,
+              let evaluation = Resolver.evaluateInitialClear(board, source, destination) else { return nil }
+        let suggestion = HintSuggestion(from: source, to: destination,
+                                        reason: .standardMatch(clearedCount: evaluation.clearedCells.count),
+                                        clearedCount: evaluation.clearedCells.count)
+        displayHint(suggestion)
+        return suggestion
+    }
+
     private func showHintIfNeeded() {
-        guard hintedPair == nil, inputEnabled, !isAnimating,
-              let pair = Resolver.firstAvailableMove(board) else { return }
-        hintedPair = pair
-        for cell in [pair.0, pair.1] {
-            nodes[cell]?.run(.repeatForever(.sequence([
-                .scale(to: 1.10, duration: 0.32),
-                .scale(to: 1.0, duration: 0.32)
-            ])), withKey: "hint")
+        guard hintedPair == nil, inputEnabled, !isInputGated, isSettled else { return }
+        if let suggestion = HintAdvisor.suggest(board: board,
+                                                unmetCollectionKinds: hintObjectiveKinds?() ?? []) {
+            displayHint(suggestion, isIdle: true)
+        } else if let pair = Resolver.firstAvailableMove(board) {
+            let fallback = HintSuggestion(from: pair.0, to: pair.1, reason: .standardMatch(clearedCount: 3), clearedCount: 3)
+            displayHint(fallback, isIdle: true)
         }
     }
 
-    private func clearHint() {
+    private func displayHint(_ suggestion: HintSuggestion, isIdle: Bool = false) {
+        clearHint()
         idleSeconds = 0
-        guard let pair = hintedPair else { return }
-        for cell in [pair.0, pair.1] {
-            nodes[cell]?.removeAction(forKey: "hint")
-            nodes[cell]?.setScale(1.0)
+        hintedPair = (suggestion.from, suggestion.to)
+        activeHint = suggestion
+
+        guard let layout else { return }
+
+        let side = layout.tile * 0.94
+        for cell in [suggestion.from, suggestion.to] {
+            guard let node = nodes[cell] else { continue }
+
+            // Static highlight outline (always shown for Reduce Motion & standard mode)
+            let box = SKShapeNode(rect: CGRect(x: -side / 2, y: -side / 2, width: side, height: side),
+                                 cornerRadius: side * 0.24)
+            box.strokeColor = UIColor.systemYellow.withAlphaComponent(0.9)
+            box.lineWidth = 3
+            box.fillColor = UIColor.systemYellow.withAlphaComponent(0.12)
+            box.zPosition = 4
+            box.name = "hint_highlight"
+            node.addChild(box)
+            hintNodes.append(box)
+
+            // Dynamic pulsing is disabled when Reduce Motion is active
+            if !isReduceMotionEnabled {
+                node.run(.repeatForever(.sequence([
+                    .scale(to: 1.10, duration: 0.32),
+                    .scale(to: 1.0, duration: 0.32)
+                ])), withKey: "hint")
+            }
         }
-        hintedPair = nil
+
+        // Draw directional connector arrow between the two suggested cells
+        drawHintArrow(from: suggestion.from, to: suggestion.to)
+
+        // Spoken announcement for requested hints
+        if !isIdle {
+            let message = hintAccessibilityAnnouncement(for: suggestion)
+            UIAccessibility.post(notification: .announcement, argument: message)
+        }
+    }
+
+    private func drawHintArrow(from a: Cell, to b: Cell) {
+        guard let layout else { return }
+        let pA = layout.center(of: a)
+        let pB = layout.center(of: b)
+
+        let path = CGMutablePath()
+        path.move(to: pA)
+        path.addLine(to: pB)
+        let length = max(1, hypot(pB.x - pA.x, pB.y - pA.y))
+        let unit = CGPoint(x: (pB.x - pA.x) / length, y: (pB.y - pA.y) / length)
+        let wing = layout.tile * 0.16
+        path.move(to: CGPoint(x: pB.x - unit.x * wing - unit.y * wing,
+                             y: pB.y - unit.y * wing + unit.x * wing))
+        path.addLine(to: pB)
+        path.addLine(to: CGPoint(x: pB.x - unit.x * wing + unit.y * wing,
+                                y: pB.y - unit.y * wing - unit.x * wing))
+
+        let line = SKShapeNode(path: path)
+        line.strokeColor = UIColor.systemYellow.withAlphaComponent(0.85)
+        line.lineWidth = 4
+        line.lineCap = .round
+        line.zPosition = 15
+        addChild(line)
+        hintNodes.append(line)
+    }
+
+    func clearHint() {
+        idleSeconds = 0
+        for node in hintNodes { node.removeFromParent() }
+        hintNodes.removeAll()
+
+        if let pair = hintedPair {
+            for cell in [pair.0, pair.1] {
+                nodes[cell]?.removeAction(forKey: "hint")
+                nodes[cell]?.setScale(1.0)
+            }
+            hintedPair = nil
+        }
+        activeHint = nil
+    }
+
+    private func hintAccessibilityAnnouncement(for suggestion: HintSuggestion) -> String {
+        let fromDesc = "Row \(suggestion.from.row + 1), Column \(suggestion.from.col + 1)"
+        let toDesc = "Row \(suggestion.to.row + 1), Column \(suggestion.to.col + 1)"
+
+        switch suggestion.reason {
+        case let .collectObjective(kind, _):
+            let fruit = level.palette[safe: kind.index] ?? "target"
+            return "Hint: Swap \(fromDesc) with \(toDesc) to collect \(fruit)."
+        case let .createSpecial(special):
+            return "Hint: Swap \(fromDesc) with \(toDesc) to create a \(specialName(for: special))."
+        case .activateSpecial:
+            return "Hint: Swap \(fromDesc) with \(toDesc) to activate special tile."
+        case let .standardMatch(count):
+            return "Hint: Swap \(fromDesc) with \(toDesc) to match \(count) tiles."
+        }
+    }
+
+    private func specialName(for tile: Tile) -> String {
+        switch tile {
+        case .rocket: return "Rocket"
+        case .bomb: return "Bomb"
+        case .rainbow: return "Rainbow"
+        case .normal: return "Tile"
+        }
+    }
+
+    // MARK: - Accessibility Support
+
+    func frame(for cell: Cell) -> CGRect? {
+        guard let layout else { return nil }
+        let center = layout.center(of: cell)
+        let side = layout.tile
+        return CGRect(x: center.x - side / 2, y: center.y - side / 2, width: side, height: side)
+    }
+
+    func cellTile(at cell: Cell) -> Tile? {
+        board[cell]
+    }
+
+    func cellAccessibilityLabel(at cell: Cell) -> String {
+        guard let tile = board[cell] else {
+            return "Empty, Row \(cell.row + 1), Column \(cell.col + 1)"
+        }
+        let fruit = symbol(for: tile)
+        let fruitName = fruitAccessibilityName(fruit)
+        let rowStr = "Row \(cell.row + 1)"
+        let colStr = "Column \(cell.col + 1)"
+
+        switch tile {
+        case .normal:
+            return "\(fruitName), \(rowStr), \(colStr)"
+        case let .rocket(_, axis):
+            let dir = axis == .horizontal ? "Horizontal" : "Vertical"
+            return "\(dir) Rocket \(fruitName), \(rowStr), \(colStr)"
+        case .bomb:
+            return "Bomb \(fruitName), \(rowStr), \(colStr)"
+        case .rainbow:
+            return "Rainbow, \(rowStr), \(colStr)"
+        }
+    }
+
+    private func fruitAccessibilityName(_ symbol: String) -> String {
+        switch symbol {
+        case "🍎": return "Apple"
+        case "🍌": return "Banana"
+        case "🍇": return "Grapes"
+        case "🍊": return "Orange"
+        case "🍓": return "Strawberry"
+        case "🍒": return "Cherries"
+        case "🥝": return "Kiwi"
+        case "🍉": return "Watermelon"
+        case "🍋": return "Lemon"
+        case "🍑": return "Peach"
+        case "🍍": return "Pineapple"
+        case "🥥": return "Coconut"
+        case "🌈": return "Rainbow"
+        default: return symbol
+        }
+    }
+
+    /// Accessibility selection and swap parity with touch events.
+    func selectCellAccessibility(at cell: Cell) {
+        guard inputEnabled, !isInputGated, isSettled,
+              board.contains(cell), board[cell] != nil else { return }
+        clearHint()
+
+        if let selected = selectedCell {
+            if selected == cell {
+                clearSelection()
+                return
+            }
+            if selected.isAdjacent(to: cell) {
+                commitSwap(from: selected, to: cell)
+                return
+            }
+        }
+        select(cell)
+    }
+
+    func isCellSelected(_ cell: Cell) -> Bool {
+        selectedCell == cell
     }
 }
 

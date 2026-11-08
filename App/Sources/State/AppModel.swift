@@ -2,59 +2,35 @@ import Combine
 import Foundation
 import Match3Core
 
-struct ProgressData: Codable, Equatable {
-    var unlockedLevel = 1
-    var stars: [Int: Int] = [:]
-    var bestScores: [Int: Int] = [:]
-
-    static let empty = ProgressData()
-}
-
-/// JSON in Application Support. Synchronous and tiny, so no actor needed.
-final class ProgressStore {
-    private(set) var data: ProgressData
-    private let url: URL
-
-    init(fileManager: FileManager = .default) {
-        let support = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        let directory = support.appendingPathComponent("EmojiMatch", isDirectory: true)
-        try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
-        url = directory.appendingPathComponent("progress.json")
-
-        if let raw = try? Data(contentsOf: url),
-           let decoded = try? JSONDecoder().decode(ProgressData.self, from: raw) {
-            data = decoded
-        } else {
-            data = .empty
-        }
-    }
-
-    func record(levelID: Int, score: Int, stars: Int, unlockedLevel: Int) {
-        var next = data
-        next.stars[levelID] = max(next.stars[levelID] ?? 0, stars)
-        next.bestScores[levelID] = max(next.bestScores[levelID] ?? 0, score)
-        next.unlockedLevel = max(next.unlockedLevel, unlockedLevel)
-        data = next
-        guard let raw = try? JSONEncoder().encode(data) else { return }
-        try? raw.write(to: url, options: .atomic)
-    }
-}
-
+@MainActor
 final class AppModel: ObservableObject {
-    @Published private(set) var progress: ProgressData
+    @Published private(set) var progress: CampaignProgress
     @Published private(set) var engine: GameEngine?
+    @Published var saveWarning: String?
 
     let levels: [Level]
-    private let store: ProgressStore
+    let dailyPuzzle: DailyPuzzleModel?
+    private let store: CampaignProgressStore
 
-    init(store: ProgressStore = ProgressStore()) {
+    init(store: CampaignProgressStore = CampaignProgressStore(),
+         dailyModel: DailyPuzzleModel? = nil,
+         levels: [Level]? = nil) {
         self.store = store
-        levels = LevelCatalog.load()
+        self.levels = levels ?? LevelCatalog.load()
+        dailyPuzzle = dailyModel ?? (try? DailyPuzzleModel(
+            store: DailyChallengeStore(url: DailyPuzzleModel.defaultStoreURL)))
         progress = store.data
+        if let error = store.lastError {
+            saveWarning = "Progress could not be loaded: \(error.message)"
+        }
     }
 
     func isUnlocked(_ level: Level) -> Bool {
         level.id <= progress.unlockedLevel
+    }
+
+    func isCompleted(_ level: Level) -> Bool {
+        progress.isCompleted(levelID: level.id)
     }
 
     func stars(for level: Level) -> Int {
@@ -65,24 +41,80 @@ final class AppModel: ObservableObject {
         progress.bestScores[level.id] ?? 0
     }
 
+    func bestScore(for configuration: GameConfiguration) -> Int {
+        switch configuration {
+        case let .campaign(level):
+            return bestScore(for: level)
+        case let .daily(challenge):
+            return dailyPuzzle?.records.first { $0.id == challenge.id }?.bestCompletedScore ?? 0
+        }
+    }
+
     func level(withID id: Int) -> Level? {
         levels.first { $0.id == id }
     }
 
+    var nextCampaignLevel: Level? {
+        guard let id = progress.nextUncompletedLevelID(from: levels.map(\.id)) else { return nil }
+        return level(withID: id)
+    }
+
     func start(_ level: Level) {
-        engine = GameEngine(level: level)
+        start(.campaign(level))
+    }
+
+    func start(_ configuration: GameConfiguration) {
+        engine?.resetTransientState()
+        let nextEngine = GameEngine(configuration: configuration)
+        nextEngine.onSettledOutcome = { [weak self] outcome in
+            self?.record(outcome)
+        }
+        engine = nextEngine
     }
 
     func exitGame() {
+        engine?.resetTransientState()
         engine = nil
     }
 
+    /// Compatibility entry point for callers that already have a final result.
     func recordResult(level: Level, score: Int, stars: Int) {
-        store.record(levelID: level.id,
+        record(.init(configuration: .campaign(level),
                      score: score,
-                     stars: stars,
-                     unlockedLevel: min(levels.count, level.id + 1))
+                     stars: max(1, stars),
+                     completed: true,
+                     movesUsed: 0))
+    }
+
+    private func record(_ outcome: GameEngine.SettledOutcome) {
+        if case let .daily(challenge) = outcome.configuration {
+            guard let dailyPuzzle,
+                  let result = DailyShareResult(challenge: challenge,
+                                                completed: outcome.completed,
+                                                score: outcome.score,
+                                                movesUsed: outcome.movesUsed) else {
+                saveWarning = "Daily history could not be saved. Your current result is still available."
+                return
+            }
+            dailyPuzzle.recordSettled(result)
+            saveWarning = dailyPuzzle.warning == nil ? nil
+                : "Your daily result is safe for this session but could not be saved."
+            return
+        }
+        guard case let .campaign(level) = outcome.configuration, outcome.completed else { return }
+        let unlocked = min(levels.count, level.id + 1)
+        let result = store.record(levelID: level.id,
+                                  score: outcome.score,
+                                  stars: outcome.stars,
+                                  unlockedLevel: unlocked,
+                                  completed: outcome.completed)
         progress = store.data
+        switch result {
+        case .success:
+            saveWarning = nil
+        case let .failure(error):
+            saveWarning = "Progress is safe for this session but could not be saved: \(error.message)"
+        }
     }
 }
 
