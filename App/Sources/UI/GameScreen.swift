@@ -17,7 +17,7 @@ struct GameScreen: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            HUDView(engine: engine, exit: requestExit,
+            HUDView(engine: engine, exit: requestExit, restart: restart,
                     requestHint: { learning.requestHint(unmetKinds: engine.unmetCollectionKinds) },
                     openHelp: { learning.openHowToPlay() },
                     learningBlocksInput: learning.blocksInput)
@@ -100,11 +100,17 @@ struct GameScreen: View {
             app.exitGame()
         }
     }
+
+    private func restart() {
+        guard !engine.isResolving else { return }
+        app.start(engine.configuration)
+    }
 }
 
 struct HUDView: View {
     @ObservedObject var engine: GameEngine
     let exit: () -> Void
+    let restart: () -> Void
     let requestHint: () -> Void
     let openHelp: () -> Void
     let learningBlocksInput: Bool
@@ -161,14 +167,19 @@ struct HUDView: View {
                 .accessibilityLabel("Undo last move")
                 .accessibilityIdentifier("undoButton")
                 Button(action: requestHint) { Label("Hint", systemImage: "lightbulb") }
+                    .disabled(!engine.canAcceptMoves || learningBlocksInput)
                     .accessibilityIdentifier("hintButton")
                 Spacer()
+                Button(action: restart) { Label("Restart", systemImage: "arrow.counterclockwise") }
+                    .disabled(engine.isResolving)
+                    .accessibilityIdentifier("restartButton")
+                Spacer()
                 Button(action: openHelp) { Label("How to Play", systemImage: "questionmark.circle") }
+                    .disabled(!engine.canAcceptMoves || learningBlocksInput)
                     .accessibilityIdentifier("gameHelpButton")
             }
             .font(.subheadline.weight(.semibold))
             .buttonStyle(.bordered)
-            .disabled(!engine.canAcceptMoves || learningBlocksInput)
             .padding(.horizontal, 16)
         }
     }
