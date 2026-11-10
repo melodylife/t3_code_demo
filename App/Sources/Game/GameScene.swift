@@ -3,6 +3,7 @@ import SpriteKit
 import UIKit
 
 protocol GameSceneDelegate: AnyObject {
+    func sceneWillBeginSwap()
     func sceneDidConsumeMove()
     func sceneDidClear(points: Int, kinds: [TileKind], spawnedSpecial: Bool)
     func sceneDidSettle(board: Board)
@@ -15,6 +16,13 @@ protocol GameSceneDelegate: AnyObject {
 /// mirrored into `nodes` and every step is applied to both at the moment its
 /// animation starts, so the model and the sprites can never drift apart.
 final class GameScene: SKScene {
+
+    /// Lightweight value snapshot captured before a swap commits, so the engine
+    /// can offer a one-step undo without any deep copies.
+    struct Snapshot {
+        let board: Board
+        let rng: SplitMix64
+    }
 
     private struct Playback {
         let steps: [CascadeStep]
@@ -149,6 +157,18 @@ final class GameScene: SKScene {
         backdrop = shape
     }
 
+    // MARK: - Undo Snapshot
+
+    func captureSnapshot() -> Snapshot {
+        Snapshot(board: board, rng: rng)
+    }
+
+    func restore(_ snapshot: Snapshot) {
+        board = snapshot.board
+        rng = snapshot.rng
+        syncAllNodes()
+    }
+
     // MARK: - Node construction
 
     func symbol(for tile: Tile) -> String {
@@ -254,6 +274,8 @@ final class GameScene: SKScene {
         guard inputEnabled, !isInputGated, !isAnimating else { return false }
         clearSelection()
         clearHint()
+
+        gameDelegate?.sceneWillBeginSwap()
 
         let resolution = Resolver.resolveSwap(board, a, b,
                                              paletteCount: level.paletteCount,

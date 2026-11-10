@@ -20,6 +20,14 @@ final class GameEngine: ObservableObject, GameSceneDelegate {
         let spawnedSpecial: Bool
     }
 
+    struct UndoSnapshot {
+        let scene: GameScene.Snapshot
+        let score: Int
+        let movesLeft: Int
+        let tracker: ObjectiveTracker
+        let chaseState: StarChaseState
+    }
+
     let sessionID = UUID()
     let configuration: GameConfiguration
     let level: Level
@@ -37,6 +45,7 @@ final class GameEngine: ObservableObject, GameSceneDelegate {
     private var tracker = ObjectiveTracker()
     private var chaseState = StarChaseState()
     private var feedbackDismissal: DispatchWorkItem?
+    private var undoSnapshot: UndoSnapshot?
 
     convenience init(level: Level) {
         self.init(configuration: .campaign(level))
@@ -67,6 +76,10 @@ final class GameEngine: ObservableObject, GameSceneDelegate {
 
     var canAcceptMoves: Bool {
         phase.canAcceptMoves && !isResolving && !inputBlocked && !scene.isInputGated
+    }
+
+    var canUndo: Bool {
+        phase == .playing && !isResolving && scene.isSettled && undoSnapshot != nil
     }
 
     var unmetCollectionKinds: Set<TileKind> {
@@ -153,6 +166,29 @@ final class GameEngine: ObservableObject, GameSceneDelegate {
         refreshSceneInput()
     }
 
+    // MARK: - Undo Last Move
+
+    func captureUndoSnapshot() {
+        undoSnapshot = UndoSnapshot(scene: scene.captureSnapshot(),
+                                    score: score,
+                                    movesLeft: movesLeft,
+                                    tracker: tracker,
+                                    chaseState: chaseState)
+    }
+
+    func undoLastMove() {
+        guard let snapshot = undoSnapshot else { return }
+        scene.restore(snapshot.scene)
+        tracker = snapshot.tracker
+        score = snapshot.score
+        movesLeft = snapshot.movesLeft
+        chaseState = snapshot.chaseState
+        phase = chaseState.phase
+        isResolving = false
+        undoSnapshot = nil
+        refreshSceneInput()
+    }
+
     private func refreshSceneInput() {
         scene.inputEnabled = phase.canAcceptMoves && !inputBlocked
     }
@@ -163,9 +199,14 @@ final class GameEngine: ObservableObject, GameSceneDelegate {
         feedbackDismissal?.cancel()
         feedbackDismissal = nil
         clearFeedback = nil
+        undoSnapshot = nil
     }
 
     // MARK: - GameSceneDelegate
+
+    func sceneWillBeginSwap() {
+        captureUndoSnapshot()
+    }
 
     func sceneDidConsumeMove() {
         guard phase.canAcceptMoves else { return }
@@ -204,7 +245,9 @@ final class GameEngine: ObservableObject, GameSceneDelegate {
         }
     }
 
-    func sceneRejectedSwap() {}
+    func sceneRejectedSwap() {
+        undoSnapshot = nil
+    }
 
     private func publishSettledOutcome() {
         onSettledOutcome?(

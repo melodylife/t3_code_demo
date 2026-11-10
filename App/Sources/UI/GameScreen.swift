@@ -154,6 +154,12 @@ struct HUDView: View {
             objectives
             starProgress
             HStack {
+                Button(action: { engine.undoLastMove() }) {
+                    Label("Undo", systemImage: "arrow.uturn.backward")
+                }
+                .disabled(!engine.canUndo)
+                .accessibilityLabel("Undo last move")
+                .accessibilityIdentifier("undoButton")
                 Button(action: requestHint) { Label("Hint", systemImage: "lightbulb") }
                     .accessibilityIdentifier("hintButton")
                 Spacer()
