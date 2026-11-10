@@ -6,7 +6,13 @@ struct GameScreen: View {
     @EnvironmentObject private var app: AppModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showingDailyExit = false
+    @State private var celebratedNewBest = false
+    @State private var showingNewBest = false
     @StateObject private var learning: GuidedPlayCoordinator
+
+    private var personalBest: Int {
+        app.bestScore(for: engine.configuration)
+    }
 
     init(engine: GameEngine) {
         self.engine = engine
@@ -17,7 +23,10 @@ struct GameScreen: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            HUDView(engine: engine, exit: requestExit, restart: restart,
+            HUDView(engine: engine,
+                    personalBest: max(personalBest, engine.score),
+                    exit: requestExit,
+                    restart: restart,
                     requestHint: { learning.requestHint(unmetKinds: engine.unmetCollectionKinds) },
                     openHelp: { learning.openHowToPlay() },
                     learningBlocksInput: learning.blocksInput)
@@ -46,6 +55,10 @@ struct GameScreen: View {
                 if let feedback = engine.clearFeedback, engine.phase.canAcceptMoves, !learning.blocksInput {
                     ClearFeedbackView(feedback: feedback)
                         .transition(.scale.combined(with: .opacity))
+                }
+                if showingNewBest {
+                    NewBestView()
+                        .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
                 }
                 if let warning = app.saveWarning {
                     SaveWarningView(message: warning) {
@@ -86,9 +99,21 @@ struct GameScreen: View {
             engine.scene.reduceMotionOverride = value
             learning.dismissHint()
         }
+        .onChange(of: engine.score) { _, score in
+            guard !celebratedNewBest, personalBest > 0, score > personalBest else { return }
+            celebratedNewBest = true
+            showingNewBest = true
+            Haptics.success()
+            SoundPlayer.shared.play(.win)
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(1.5))
+                showingNewBest = false
+            }
+        }
         .onChange(of: engine.phase) { _, _ in learning.refreshPresentation() }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: engine.phase)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: engine.clearFeedback?.id)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: showingNewBest)
     }
 
     private func requestExit() {
@@ -109,6 +134,7 @@ struct GameScreen: View {
 
 struct HUDView: View {
     @ObservedObject var engine: GameEngine
+    let personalBest: Int
     let exit: () -> Void
     let restart: () -> Void
     let requestHint: () -> Void
@@ -137,6 +163,11 @@ struct HUDView: View {
                         .font(.system(size: 24, weight: .heavy, design: .rounded))
                         .monospacedDigit()
                         .accessibilityIdentifier("scoreValue")
+                    Text("BEST: \(personalBest)")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                        .accessibilityIdentifier("bestScoreValue")
                 }
 
                 Spacer(minLength: 4)
@@ -233,6 +264,16 @@ private struct ClearFeedbackView: View {
             .padding(.vertical, 8)
             .background(Capsule().fill(Theme.card))
             .accessibilityLabel("\(feedback.points) points, multiplier \(feedback.multiplier)")
+    }
+}
+
+private struct NewBestView: View {
+    var body: some View {
+        Text("NEW BEST!")
+            .font(.system(size: 16, weight: .heavy, design: .rounded))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(Capsule().fill(Theme.card))
     }
 }
 
